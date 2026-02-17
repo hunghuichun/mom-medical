@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 家庭雲端語音記帳</title>
+    <title>💰 家庭雲端記帳(含日期)</title>
     <style>
-        :root { --p-color: #27ae60; --bg: #f4f7f6; --danger: #e74c3c; --edit: #3498db; }
-        * { box-sizing: border-box; font-family: "PingFang TC", sans-serif; }
-        body { background: var(--bg); margin: 0; padding: 10px; padding-bottom: 120px; }
+        :root { --p-color: #27ae60; --bg: #f4f7f6; --danger: #e74c3c; --edit: #3498db; --text: #2d3436; }
+        * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
+        body { background: var(--bg); margin: 0; padding: 10px; padding-bottom: 120px; color: var(--text); }
         .container { max-width: 500px; margin: 0 auto; }
         
         header { 
@@ -20,42 +20,49 @@
         .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--p-color); margin-top: 5px; }
 
-        #status { text-align: center; color: #666; font-size: 0.9rem; height: 25px; margin-bottom: 5px; font-weight: 500; }
-        
-        .mic-area { text-align: center; margin-bottom: 20px; }
+        .mic-area { text-align: center; margin-bottom: 20px; position: relative; }
         .voice-btn { 
-            width: 80px; height: 80px; border-radius: 50%; background: #e74c3c; 
-            color: white; border: none; font-size: 1.8rem; cursor: pointer;
+            width: 70px; height: 70px; border-radius: 50%; background: #e74c3c; 
+            color: white; border: none; font-size: 1.5rem; cursor: pointer;
             box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3); transition: 0.3s;
         }
-        .voice-btn.listening { animation: pulse 1.2s infinite; background: #c0392b; transform: scale(1.1); }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+        .voice-btn.listening { animation: pulse 1.2s infinite; background: #c0392b; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
-        /* 紀錄列表樣式 */
-        .record-item { 
-            background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px;
-            display: flex; justify-content: space-between; align-items: center; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 5px solid #ddd;
+        /* 日期分組標題 */
+        .date-group-header {
+            padding: 15px 5px 5px;
+            font-weight: bold;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
         }
-        .record-info { flex: 1; }
-        .record-info strong { font-size: 1.1rem; display: block; margin-bottom: 2px; }
-        .record-meta { font-size: 0.8rem; color: #999; display: flex; gap: 8px; align-items: center; }
-        .cat-tag { background: #f0f2f5; color: #555; padding: 1px 6px; border-radius: 4px; font-size: 0.75rem; }
 
-        .record-actions { display: flex; gap: 10px; align-items: center; }
-        .amt { font-weight: bold; color: #2c3e50; font-size: 1.1rem; margin-right: 5px; }
+        .record-item { 
+            background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .record-info strong { font-size: 1.05rem; color: #2d3436; }
+        .record-meta { font-size: 0.75rem; color: #999; margin-top: 3px; }
+        .cat-tag { background: #f0f2f5; color: #666; padding: 1px 5px; border-radius: 4px; margin-right: 5px; }
+
+        .record-actions { display: flex; gap: 8px; align-items: center; }
+        .amt { font-weight: bold; color: #2d3436; font-size: 1.1rem; }
         
-        /* 按鈕樣式 */
         .btn-sm { 
-            border: none; background: #f0f2f5; width: 35px; height: 35px; 
-            border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex;
-            align-items: center; justify-content: center; transition: 0.2s;
+            border: none; background: #f8f9fa; width: 32px; height: 32px; 
+            border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: center;
         }
         .btn-edit { color: var(--edit); }
         .btn-delete { color: var(--danger); }
-        .btn-sm:active { background: #e2e6ea; }
 
-        #sync-status { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; }
+        #status { text-align: center; color: #666; font-size: 0.85rem; margin-bottom: 8px; font-weight: 500; }
+        #sync-status { font-size: 0.7rem; opacity: 0.8; margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -71,7 +78,7 @@
         <div class="stat-card"><div>本月累計</div><div id="month-total" class="stat-val">$0</div></div>
     </div>
 
-    <div id="status">點擊麥克風說「晚餐 150 元」</div>
+    <div id="status">點擊麥克風說「買菜 500 元」</div>
     <div class="mic-area">
         <button id="micBtn" class="voice-btn">🎤</button>
     </div>
@@ -95,7 +102,7 @@
     const db = getDatabase(app);
     const budgetRef = ref(db, 'budget_records');
 
-    // --- 1. 語音辨識功能 ---
+    // --- 語音辨識 ---
     const micBtn = document.getElementById('micBtn');
     const status = document.getElementById('status');
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -116,63 +123,64 @@
         const amountMatch = text.match(/\d+/);
         if (amountMatch) {
             const amount = parseInt(amountMatch[0]);
-            const item = text.replace(amountMatch[0], "").replace("元", "").trim() || "未命名";
+            const item = text.replace(amountMatch[0], "").replace("元", "").trim() || "未命名項目";
             addRecord(item, amount);
         } else {
-            alert("沒聽到金額，請再試一次（例如：買菜 500 元）");
+            alert("沒聽到金額，請再試一次（例如：早餐 80 元）");
         }
     }
 
-    // --- 2. 雲端操作功能 ---
-
-    // 新增
     function addRecord(item, amount) {
         let category = "雜項";
-        if (/(餐|吃|喝|飲|麵|飯|肉|菜)/.test(item)) category = "飲食";
-        if (/(車|油|捷運|公車|交通|停車)/.test(item)) category = "交通";
-        if (/(醫|藥|診|健|牙)/.test(item)) category = "醫療";
+        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳)/.test(item)) category = "飲食";
+        if (/(車|油|捷運|公車|交通|停車|票)/.test(item)) category = "交通";
+        if (/(醫|藥|診|健|牙|掛號)/.test(item)) category = "醫療";
         
-        push(budgetRef, {
-            item, amount, category, time: serverTimestamp()
-        });
+        push(budgetRef, { item, amount, category, time: serverTimestamp() });
     }
 
-    // 刪除 (掛載到 window 讓 HTML 可以呼叫)
-    window.confirmDelete = (key) => {
-        if (confirm("確定要刪除這筆帳目嗎？")) {
-            remove(ref(db, `budget_records/${key}`));
-        }
-    };
-
-    // 修正
+    // 全域函數供 HTML 按鈕使用
+    window.confirmDelete = (key) => { if (confirm("要刪除這筆嗎？")) remove(ref(db, `budget_records/${key}`)); };
     window.editRecord = (key, currentItem, currentAmount) => {
-        const newItem = prompt("修正項目名稱：", currentItem);
+        const newItem = prompt("修正名稱：", currentItem);
         if (newItem === null) return;
-        
         const newAmount = prompt("修正金額：", currentAmount);
         if (newAmount === null || isNaN(newAmount)) return;
-
         set(ref(db, `budget_records/${key}/item`), newItem);
         set(ref(db, `budget_records/${key}/amount`), parseInt(newAmount));
     };
 
-    // --- 3. 讀取與渲染 ---
+    // --- 讀取與顯示 (含日期分組) ---
     onValue(budgetRef, (snapshot) => {
         const data = snapshot.val();
         const list = document.getElementById('record-list');
         list.innerHTML = "";
         let dayTotal = 0; let monthTotal = 0;
         const now = new Date();
+        const todayStr = now.toLocaleDateString('zh-TW');
 
         if (data) {
-            // 將物件轉為陣列，保留 key 並按時間倒序
             const records = Object.keys(data).map(key => ({ key, ...data[key] }))
                                   .sort((a, b) => b.time - a.time);
             
+            let lastDateLabel = "";
+
             records.forEach(rec => {
                 const recDate = new Date(rec.time);
-                if (recDate.toDateString() === now.toDateString()) dayTotal += rec.amount;
-                if (recDate.getMonth() === now.getMonth()) monthTotal += rec.amount;
+                const dateLabel = recDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+                
+                // 計算總額
+                if (recDate.toLocaleDateString('zh-TW') === todayStr) dayTotal += rec.amount;
+                if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) monthTotal += rec.amount;
+
+                // 插入日期標題 (如果日期變了)
+                if (dateLabel !== lastDateLabel) {
+                    const header = document.createElement('div');
+                    header.className = 'date-group-header';
+                    header.innerHTML = `<span>📅 ${dateLabel}</span>`;
+                    list.appendChild(header);
+                    lastDateLabel = dateLabel;
+                }
 
                 const div = document.createElement('div');
                 div.className = 'record-item';
@@ -193,8 +201,8 @@
                 list.appendChild(div);
             });
         }
-        document.getElementById('day-total').innerText = `$${dayTotal}`;
-        document.getElementById('month-total').innerText = `$${monthTotal}`;
+        document.getElementById('day-total').innerText = `$${dayTotal.toLocaleString()}`;
+        document.getElementById('month-total').innerText = `$${monthTotal.toLocaleString()}`;
         document.getElementById('sync-status').innerText = "✅ 雲端同步中";
     });
 </script>
