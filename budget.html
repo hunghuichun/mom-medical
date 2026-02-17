@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 家庭雲端記帳(含日期)</title>
+    <title>💰 家庭雲端記帳(含分類統計)</title>
     <style>
         :root { --p-color: #27ae60; --bg: #f4f7f6; --danger: #e74c3c; --edit: #3498db; --text: #2d3436; }
         * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
@@ -13,14 +13,25 @@
         header { 
             background: linear-gradient(135deg, #27ae60, #2ecc71); 
             color: white; padding: 15px; border-radius: 15px; text-align: center; 
-            margin-bottom: 15px; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
+            margin-bottom: 15px; box-shadow: 0 4px 10px rgba(39,174,96,0.2);
         }
         
-        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        /* 統計區塊 */
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-label { font-size: 0.85rem; color: #7f8c8d; }
         .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--p-color); margin-top: 5px; }
 
-        .mic-area { text-align: center; margin-bottom: 20px; position: relative; }
+        /* 分類分析區塊 */
+        .category-analysis { 
+            background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 15px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.85rem;
+        }
+        .cat-row { display: flex; justify-content: space-between; margin-bottom: 5px; padding: 2px 0; border-bottom: 1px dashed #eee; }
+        .cat-name { color: #636e72; }
+        .cat-sum { font-weight: bold; color: #2d3436; }
+
+        .mic-area { text-align: center; margin-bottom: 20px; }
         .voice-btn { 
             width: 70px; height: 70px; border-radius: 50%; background: #e74c3c; 
             color: white; border: none; font-size: 1.5rem; cursor: pointer;
@@ -29,16 +40,9 @@
         .voice-btn.listening { animation: pulse 1.2s infinite; background: #c0392b; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
-        /* 日期分組標題 */
         .date-group-header {
-            padding: 15px 5px 5px;
-            font-weight: bold;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 10px;
+            padding: 15px 5px 5px; font-weight: bold; color: #7f8c8d;
+            font-size: 0.9rem; border-bottom: 1px solid #ddd; margin-bottom: 10px;
         }
 
         .record-item { 
@@ -46,23 +50,16 @@
             display: flex; justify-content: space-between; align-items: center; 
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
         }
-        .record-info strong { font-size: 1.05rem; color: #2d3436; }
+        .record-info strong { font-size: 1.05rem; }
         .record-meta { font-size: 0.75rem; color: #999; margin-top: 3px; }
         .cat-tag { background: #f0f2f5; color: #666; padding: 1px 5px; border-radius: 4px; margin-right: 5px; }
 
         .record-actions { display: flex; gap: 8px; align-items: center; }
-        .amt { font-weight: bold; color: #2d3436; font-size: 1.1rem; }
+        .amt { font-weight: bold; font-size: 1.1rem; }
         
-        .btn-sm { 
-            border: none; background: #f8f9fa; width: 32px; height: 32px; 
-            border-radius: 8px; cursor: pointer; font-size: 0.9rem;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-edit { color: var(--edit); }
-        .btn-delete { color: var(--danger); }
+        .btn-sm { border: none; background: #f8f9fa; width: 32px; height: 32px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; }
 
-        #status { text-align: center; color: #666; font-size: 0.85rem; margin-bottom: 8px; font-weight: 500; }
-        #sync-status { font-size: 0.7rem; opacity: 0.8; margin-top: 3px; }
+        #status { text-align: center; color: #666; font-size: 0.85rem; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -70,15 +67,25 @@
 <div class="container">
     <header>
         <h1>💰 家庭雲端記帳</h1>
-        <div id="sync-status">📡 連線中...</div>
+        <div id="sync-status" style="font-size: 0.7rem; opacity: 0.8;">📡 連線中...</div>
     </header>
 
-    <div class="summary">
-        <div class="stat-card"><div>今日累計</div><div id="day-total" class="stat-val">$0</div></div>
-        <div class="stat-card"><div>本月累計</div><div id="month-total" class="stat-val">$0</div></div>
+    <!-- 1. 總額統計 -->
+    <div class="summary-grid">
+        <div class="stat-card"><div class="stat-label">今日累計</div><div id="day-total" class="stat-val">$0</div></div>
+        <div class="stat-card"><div class="stat-label">本月累計</div><div id="month-total" class="stat-val">$0</div></div>
     </div>
 
-    <div id="status">點擊麥克風說「買菜 500 元」</div>
+    <!-- 2. 分類分析 (本月) -->
+    <div class="category-analysis">
+        <div style="font-weight:bold; margin-bottom:8px; color:var(--p-color);">📊 本月分類統計</div>
+        <div id="cat-list">
+            <!-- 由 JS 動態產生 -->
+            <div style="color:#ccc; text-align:center;">尚無資料</div>
+        </div>
+    </div>
+
+    <div id="status">點擊麥克風說「晚餐 150 元」</div>
     <div class="mic-area">
         <button id="micBtn" class="voice-btn">🎤</button>
     </div>
@@ -108,56 +115,56 @@
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (Recognition) {
-        const rec = new Recognition();
-        rec.lang = 'zh-TW';
+        const rec = new Recognition(); rec.lang = 'zh-TW';
         micBtn.onclick = () => { rec.start(); micBtn.classList.add('listening'); status.innerText = "聽取中..."; };
         rec.onresult = (e) => {
             micBtn.classList.remove('listening');
-            processText(e.results[0][0].transcript);
+            const text = e.results[0][0].transcript;
+            status.innerText = "辨識：" + text;
+            const amountMatch = text.match(/\d+/);
+            if (amountMatch) {
+                const amount = parseInt(amountMatch[0]);
+                const item = text.replace(amountMatch[0], "").replace("元", "").trim() || "未命名";
+                addRecord(item, amount);
+            }
         };
-        rec.onerror = () => { micBtn.classList.remove('listening'); status.innerText = "語音出錯，請再試一次"; };
-    }
-
-    function processText(text) {
-        status.innerText = "辨識：" + text;
-        const amountMatch = text.match(/\d+/);
-        if (amountMatch) {
-            const amount = parseInt(amountMatch[0]);
-            const item = text.replace(amountMatch[0], "").replace("元", "").trim() || "未命名項目";
-            addRecord(item, amount);
-        } else {
-            alert("沒聽到金額，請再試一次（例如：早餐 80 元）");
-        }
+        rec.onerror = () => { micBtn.classList.remove('listening'); };
     }
 
     function addRecord(item, amount) {
         let category = "雜項";
-        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳)/.test(item)) category = "飲食";
-        if (/(車|油|捷運|公車|交通|停車|票)/.test(item)) category = "交通";
-        if (/(醫|藥|診|健|牙|掛號)/.test(item)) category = "醫療";
-        
+        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳|水)/.test(item)) category = "飲食";
+        if (/(車|油|捷運|公車|交通|停車|票|洗車)/.test(item)) category = "交通";
+        if (/(醫|藥|診|健|牙|掛號|醫美)/.test(item)) category = "醫療";
+        if (/(衣|鞋|包|服)/.test(item)) category = "治裝";
         push(budgetRef, { item, amount, category, time: serverTimestamp() });
     }
 
-    // 全域函數供 HTML 按鈕使用
     window.confirmDelete = (key) => { if (confirm("要刪除這筆嗎？")) remove(ref(db, `budget_records/${key}`)); };
     window.editRecord = (key, currentItem, currentAmount) => {
         const newItem = prompt("修正名稱：", currentItem);
-        if (newItem === null) return;
+        if (!newItem) return;
         const newAmount = prompt("修正金額：", currentAmount);
-        if (newAmount === null || isNaN(newAmount)) return;
+        if (!newAmount || isNaN(newAmount)) return;
         set(ref(db, `budget_records/${key}/item`), newItem);
         set(ref(db, `budget_records/${key}/amount`), parseInt(newAmount));
     };
 
-    // --- 讀取與顯示 (含日期分組) ---
+    // --- 核心：讀取、統計與渲染 ---
     onValue(budgetRef, (snapshot) => {
         const data = snapshot.val();
         const list = document.getElementById('record-list');
+        const catList = document.getElementById('cat-list');
         list.innerHTML = "";
-        let dayTotal = 0; let monthTotal = 0;
+        
+        let dayTotal = 0; 
+        let monthTotal = 0;
+        let catStats = {}; // 用於存分類統計
+
         const now = new Date();
-        const todayStr = now.toLocaleDateString('zh-TW');
+        const curY = now.getFullYear();
+        const curM = now.getMonth();
+        const curD = now.getDate();
 
         if (data) {
             const records = Object.keys(data).map(key => ({ key, ...data[key] }))
@@ -167,17 +174,24 @@
 
             records.forEach(rec => {
                 const recDate = new Date(rec.time);
-                const dateLabel = recDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-                
-                // 計算總額
-                if (recDate.toLocaleDateString('zh-TW') === todayStr) dayTotal += rec.amount;
-                if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) monthTotal += rec.amount;
+                const rY = recDate.getFullYear();
+                const rM = recDate.getMonth();
+                const rD = recDate.getDate();
 
-                // 插入日期標題 (如果日期變了)
+                // 1. 總額統計邏輯
+                if (rY === curY && rM === curM && rD === curD) dayTotal += rec.amount;
+                if (rY === curY && rM === curM) {
+                    monthTotal += rec.amount;
+                    // 2. 分類統計 (本月)
+                    catStats[rec.category] = (catStats[rec.category] || 0) + rec.amount;
+                }
+
+                // 3. 畫面分組顯示
+                const dateLabel = recDate.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
                 if (dateLabel !== lastDateLabel) {
                     const header = document.createElement('div');
                     header.className = 'date-group-header';
-                    header.innerHTML = `<span>📅 ${dateLabel}</span>`;
+                    header.innerHTML = `📅 ${dateLabel}`;
                     list.appendChild(header);
                     lastDateLabel = dateLabel;
                 }
@@ -187,20 +201,28 @@
                 div.innerHTML = `
                     <div class="record-info">
                         <strong>${rec.item}</strong>
-                        <div class="record-meta">
-                            <span class="cat-tag">${rec.category}</span>
-                            ${recDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </div>
+                        <div class="record-meta"><span class="cat-tag">${rec.category}</span>${recDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
                     </div>
                     <div class="record-actions">
-                        <span class="amt">$${rec.amount}</span>
-                        <button class="btn-sm btn-edit" onclick="editRecord('${rec.key}', '${rec.item}', ${rec.amount})">✏️</button>
-                        <button class="btn-sm btn-delete" onclick="confirmDelete('${rec.key}')">🗑️</button>
+                        <span class="amt">$${rec.amount.toLocaleString()}</span>
+                        <button class="btn-sm" onclick="editRecord('${rec.key}', '${rec.item}', ${rec.amount})">✏️</button>
+                        <button class="btn-sm" onclick="confirmDelete('${rec.key}')">🗑️</button>
                     </div>
                 `;
                 list.appendChild(div);
             });
+
+            // 4. 更新分類統計 UI
+            catList.innerHTML = Object.entries(catStats)
+                .sort((a,b) => b[1] - a[1]) // 金額大到小排
+                .map(([name, sum]) => `
+                    <div class="cat-row">
+                        <span class="cat-name">${name}</span>
+                        <span class="cat-sum">$${sum.toLocaleString()}</span>
+                    </div>
+                `).join('');
         }
+
         document.getElementById('day-total').innerText = `$${dayTotal.toLocaleString()}`;
         document.getElementById('month-total').innerText = `$${monthTotal.toLocaleString()}`;
         document.getElementById('sync-status').innerText = "✅ 雲端同步中";
