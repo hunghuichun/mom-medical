@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏥 媽媽就醫分工(雲端版)</title>
+    <title>🏥 媽媽就醫行程分工(雲端版)</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -52,7 +52,6 @@
         button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; color: white; }
         .btn-copy { background: var(--success-color); }
         
-        /* 載入中動畫 */
         #loader { text-align: center; padding: 50px; color: var(--text-main); }
     </style>
 </head>
@@ -91,7 +90,7 @@
     const db = getDatabase(app);
     const scheduleRef = ref(db, 'schedule');
 
-    // --- 2. 資料定義 ---
+    // --- 2. 行程資料更新 ---
     const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
     const events = [
         { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
@@ -99,7 +98,9 @@
         { id: 'ev3', date: '2026-02-26', weekday: '四', time: '08:30', title: '神經傳導 NCV', location: '檢查室', notesHint: '' },
         { id: 'ev4', date: '2026-02-26', weekday: '四', time: '10:00', title: '腦波 EEG', location: '2樓腦波室', notesHint: '前一天洗頭、不要髮油' },
         { id: 'ev5', date: '2026-03-03', weekday: '二', time: '10:00', title: 'SSEP 檢查', location: '檢查室', notesHint: '' },
-        { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' }
+        { id: 'ev7', date: '2026-03-10', weekday: '二', time: '上午', title: '牙齒檢查/治療', location: '牙科診所', notesHint: '' },
+        { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev8', date: '2026-03-31', weekday: '二', time: '上午', title: '新陳代謝科回診', location: '醫院', notesHint: '' }
     ];
 
     let currentData = {};
@@ -123,6 +124,7 @@
             
             const card = document.createElement('div');
             card.className = `event-card ${isAssigned ? 'assigned' : ''}`;
+            
             card.innerHTML = `
                 <div class="date-badge">${ev.date} (${ev.weekday}) ${ev.time}</div>
                 <div class="event-title">${ev.title}</div>
@@ -137,7 +139,6 @@
             list.appendChild(card);
         });
 
-        // 綁定事件
         document.querySelectorAll('.assignee-select').forEach(el => {
             el.onchange = (e) => updateCloud(e.target.dataset.id, 'assignee', e.target.value);
         });
@@ -146,7 +147,6 @@
         });
     }
 
-    // --- 5. 更新到雲端 ---
     function updateCloud(id, field, value) {
         if (!currentData[id]) currentData[id] = { assignee: '未認領', note: '' };
         currentData[id][field] = value;
@@ -154,7 +154,6 @@
         set(scheduleRef, currentData);
     }
 
-    // --- 6. 複製 LINE 文字 ---
     document.getElementById('copyBtn').onclick = () => {
         let text = `【🏥 媽媽就醫行程分工】\n\n`;
         events.forEach((ev, i) => {
@@ -166,7 +165,7 @@
             }
             text += `\n`;
         });
-        text += `最新進度請見：${window.location.href}`;
+        text += `最新進度：${window.location.href.split('?')[0]}`;
         
         navigator.clipboard.writeText(text).then(() => {
             alert("已複製文字！可直接貼到 LINE 群組。");
