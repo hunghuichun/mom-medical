@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭醫療行程分工小工具</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #4a90e2;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --border-color: #d1d8e0;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+
+        * { box-sizing: border-box; font-family: "PingFang TC", "Heiti TC", "Microsoft JhengHei", sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 15px;
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 1px; }
+        header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.9rem; }
+
+        .event-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border-left: 8px solid var(--warning-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .event-card.assigned { border-left-color: var(--success-color); }
+
+        .date-badge {
+            display: inline-block;
+            background: #edf2f7;
+            color: var(--primary-color);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .event-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #1a1a1a;
+        }
+
+        .event-info {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            background: #fff5f5;
+            color: #c0392b;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            border: 1px solid #fed7d7;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .control-item label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #fff;
+            outline: none;
+        }
+
+        select:focus, input:focus { border-color: var(--accent-color); }
+
+        .action-area {
+            position: sticky;
+            bottom: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin-top: 30px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-generate { background-color: var(--primary-color); color: white; margin-bottom: 8px; }
+        .btn-copy { background-color: var(--success-color); color: white; display: none; }
+        
+        button:active { transform: scale(0.98); }
+
+        #preview-area {
+            display: none;
+            background: #f1f2f6;
+            border: 1px dashed #ced4da;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            color: #2f3542;
+        }
+
+        @media (max-width: 480px) {
+            .control-group { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏥 醫療行程分工表</h1>
+        <p id="current-date"></p>
+    </header>
+
+    <div id="event-list"></div>
+
+    <div class="action-area">
+        <button class="btn-generate" onclick="generateOutput()">📝 產生群組貼文</button>
+        <div id="preview-area"></div>
+        <button id="copy-btn" class="btn-copy" onclick="copyToClipboard()">📋 複製文字（貼到 LINE）</button>
+    </div>
+</div>
+
+<script>
+    // 1. 已移除「老公」的人員名單
+    const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
+    
+    // 2. 行程資料
+    const events = [
+        { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
+        { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: 'A131／33號／詹弘廷醫師', notesHint: '' },
+        { id: 'ev3', date: '2026-02-26', weekday: '四', time: '08:30', title: '神經傳導 NCV', location: '檢查室', notesHint: '' },
+        { id: 'ev4', date: '2026-02-26', weekday: '四', time: '10:00', title: '腦波 EEG', location: '2樓腦波室', notesHint: '前一天洗頭、不要髮油、提前10分鐘報到' },
+        { id: 'ev5', date: '2026-03-03', weekday: '二', time: '10:00', title: 'SSEP 檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查 (NPI+MMSE+CDR)', location: '檢查室', notesHint: '' }
+    ];
+
+    // 初始化讀取
+    let savedData = JSON.parse(localStorage.getItem('family_medical_v3')) || {};
+
+    function render() {
+        const list = document.getElementById('event-list');
+        list.innerHTML = '';
+
+        events.forEach(ev => {
+            const state = savedData[ev.id] || { assignee: '未認領', note: '' };
+            const isAssigned = state.assignee !== '未認領';
+            
+            const card = document.createElement('div');
+            card.className = `event-card ${isAssigned ? 'assigned' : ''}`;
+            
+            card.innerHTML = `
+                <div class="date-badge">${ev.date} (${ev.weekday}) ${ev.time}</div>
+                <div class="event-title">${ev.title}</div>
+                <div class="event-info">📍 地點：${ev.location}</div>
+                ${ev.notesHint ? `<div class="hint">⚠️ 注意：${ev.notesHint}</div>` : ''}
+                
+                <div class="control-group">
+                    <div class="control-item">
+                        <label>負責人</label>
+                        <select onchange="save('${ev.id}', 'assignee', this.value)">
+                            ${candidates.map(c => `<option value="${c}" ${state.assignee === c ? 'selected' : ''}>${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>備註</label>
+                        <input type="text" placeholder="補充說明..." value="${state.note}" 
+                               oninput="save('${ev.id}', 'note', this.value)">
+                    </div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    function save(id, field, value) {
+        if (!savedData[id]) savedData[id] = { assignee: '未認領', note: '' };
+        savedData[id][field] = value;
+        localStorage.setItem('family_medical_v3', JSON.stringify(savedData));
+        if (field === 'assignee') render();
+    }
+
+    function generateOutput() {
+        let text = `【🏥 就醫行程分工提醒】\n\n`;
+        
+        events.forEach((ev, index) => {
+            const data = savedData[ev.id] || { assignee: '未認領', note: '' };
+            const person = data.assignee === '未認領' ? '（待認領）' : data.assignee;
+            
+            text += `${index + 1}. ${ev.date} (${ev.weekday}) ${ev.time}\n`;
+            text += `   🔸 項目：${ev.title}\n`;
+            text += `   🙋 負責：${person}\n`;
+            
+            let combined = [];
+            if (ev.notesHint) combined.push(ev.notesHint);
+            if (data.note) combined.push(data.note);
+            if (combined.length > 0) text += `   📝 備註：${combined.join('、')}\n`;
+            text += `\n`;
+        });
+
+        text += `能協助者請回覆，我再更新表格，謝謝大家！\n`;
+        text += `(更新日期：${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+
+        const preview = document.getElementById('preview-area');
+        preview.innerText = text;
+        preview.style.display = 'block';
+        document.getElementById('copy-btn').style.display = 'flex';
+        preview.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('preview-area').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copy-btn');
+            btn.innerHTML = '✅ 已複製！可直接貼到 LINE';
+            setTimeout(() => { btn.innerHTML = '📋 複製文字（貼到 LINE）'; }, 2000);
+        });
+    }
+
+    document.getElementById('current-date').innerText = `今天日期：${new Date().toLocaleDateString('zh-TW')}`;
+    render();
+</script>
+
+</body>
+</html>
