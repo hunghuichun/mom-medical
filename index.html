@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏥 媽媽就醫行程分工(雲端版)</title>
+    <title>🏥 媽媽就醫行程分工(最新排序版)</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -27,6 +27,12 @@
         
         #sync-status { font-size: 0.8rem; margin-top: 5px; opacity: 0.8; }
 
+        /* 新增：標註最新行程的標籤 */
+        .new-tag {
+            background: #e74c3c; color: white; font-size: 0.7rem; padding: 2px 6px;
+            border-radius: 4px; margin-left: 8px; vertical-align: middle;
+        }
+
         .event-card { 
             background: var(--card-bg); border-radius: 12px; padding: 15px; 
             margin-bottom: 12px; border-left: 8px solid var(--warning-color); 
@@ -36,13 +42,14 @@
 
         .date-badge { 
             display: inline-block; background: #edf2f7; color: var(--primary-color); 
-            padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; 
+            padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 1rem; 
         }
-        .event-title { font-size: 1.15rem; font-weight: bold; margin: 8px 0; }
-        .hint { font-size: 0.85rem; color: #e74c3c; margin-bottom: 10px; background: #fff5f5; padding: 5px 8px; border-radius: 4px; }
+        .event-title { font-size: 1.2rem; font-weight: bold; margin: 8px 0; color: #1a1a1a; }
+        .location-info { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 8px; }
+        .hint { font-size: 0.85rem; color: #c0392b; margin-bottom: 10px; background: #fff5f5; padding: 5px 8px; border-radius: 4px; }
 
         .control-group { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
-        select, input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; }
+        select, input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
 
         .action-bar { 
             position: fixed; bottom: 0; left: 0; right: 0; 
@@ -72,7 +79,6 @@
 </div>
 
 <script type="module">
-    // --- 1. Firebase 初始化 ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -90,13 +96,15 @@
     const db = getDatabase(app);
     const scheduleRef = ref(db, 'schedule');
 
-    // --- 2. 行程資料更新 ---
     const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
+    
+    // 行程資料 (現在順序亂放也沒關係，程式會自動排序)
     const events = [
         { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
         { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: '詹弘廷醫師', notesHint: '' },
         { id: 'ev3', date: '2026-02-26', weekday: '四', time: '08:30', title: '神經傳導 NCV', location: '檢查室', notesHint: '' },
         { id: 'ev4', date: '2026-02-26', weekday: '四', time: '10:00', title: '腦波 EEG', location: '2樓腦波室', notesHint: '前一天洗頭、不要髮油' },
+        { id: 'ev9', date: '2026-02-28', weekday: '六', time: '09:00', title: '詹弘廷醫師回診 (A131/33號)', location: '醫療中心大樓A棟1樓', notesHint: '大約九點到' },
         { id: 'ev5', date: '2026-03-03', weekday: '二', time: '10:00', title: 'SSEP 檢查', location: '檢查室', notesHint: '' },
         { id: 'ev7', date: '2026-03-10', weekday: '二', time: '上午', title: '牙齒檢查/治療', location: '牙科診所', notesHint: '' },
         { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' },
@@ -105,7 +113,6 @@
 
     let currentData = {};
 
-    // --- 3. 核心功能：監聽雲端變動 ---
     onValue(scheduleRef, (snapshot) => {
         currentData = snapshot.val() || {};
         document.getElementById('loader').style.display = 'none';
@@ -113,21 +120,25 @@
         render(currentData);
     });
 
-    // --- 4. 畫面渲染 ---
     function render(data) {
         const list = document.getElementById('event-list');
         list.innerHTML = '';
 
-        events.forEach(ev => {
+        // --- 關鍵排序邏輯：日期由晚到早 (Descending) ---
+        const sortedEvents = [...events].sort((a, b) => b.date.localeCompare(a.date));
+
+        sortedEvents.forEach((ev, index) => {
             const state = data[ev.id] || { assignee: '未認領', note: '' };
-            const isAssigned = state.assignee !== '未認領';
-            
             const card = document.createElement('div');
-            card.className = `event-card ${isAssigned ? 'assigned' : ''}`;
+            card.className = `event-card ${state.assignee !== '未認領' ? 'assigned' : ''}`;
             
             card.innerHTML = `
-                <div class="date-badge">${ev.date} (${ev.weekday}) ${ev.time}</div>
+                <div class="date-badge">
+                    ${ev.date} (${ev.weekday}) ${ev.time}
+                    ${index === 0 ? '<span class="new-tag">最新</span>' : ''}
+                </div>
                 <div class="event-title">${ev.title}</div>
+                <div class="location-info">📍 ${ev.location}</div>
                 ${ev.notesHint ? `<div class="hint">⚠️ ${ev.notesHint}</div>` : ''}
                 <div class="control-group">
                     <select data-id="${ev.id}" class="assignee-select">
@@ -156,22 +167,18 @@
 
     document.getElementById('copyBtn').onclick = () => {
         let text = `【🏥 媽媽就醫行程分工】\n\n`;
-        events.forEach((ev, i) => {
+        // 複製文字時維持日期由早到晚，方便大家閱讀
+        const copyEvents = [...events].sort((a, b) => a.date.localeCompare(b.date));
+        
+        copyEvents.forEach((ev, i) => {
             const state = currentData[ev.id] || { assignee: '未認領', note: '' };
-            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.title}\n`;
-            text += `   🙋 負責：${state.assignee}\n`;
-            if(state.note || ev.notesHint) {
-                text += `   📝 備註：${[ev.notesHint, state.note].filter(x=>x).join('、')}\n`;
-            }
+            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.time}\n   🔹${ev.title}\n   🙋負責：${state.assignee}\n`;
+            if(state.note || ev.notesHint) text += `   📝備註：${[ev.notesHint, state.note].filter(x=>x).join('、')}\n`;
             text += `\n`;
         });
-        text += `最新進度：${window.location.href.split('?')[0]}`;
-        
-        navigator.clipboard.writeText(text).then(() => {
-            alert("已複製文字！可直接貼到 LINE 群組。");
-        });
+        text += `最新進度：${window.location.origin}${window.location.pathname}`;
+        navigator.clipboard.writeText(text).then(() => alert("已複製 LINE 文字！"));
     };
 </script>
-
 </body>
 </html>
