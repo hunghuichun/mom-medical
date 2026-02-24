@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏥 媽媽就醫行程分工(自動過濾版)</title>
+    <title>🏥 媽媽就醫行程分工(含完整紀錄)</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -38,7 +38,7 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.05); 
         }
         .event-card.assigned { border-left-color: var(--success-color); }
-        .event-card.past { opacity: 0.6; border-left-color: #bdc3c7; } /* 過期行程變灰 */
+        .event-card.past { opacity: 0.7; border-left-color: #bdc3c7; background: #fdfdfd; }
 
         .date-badge { 
             display: inline-block; background: #edf2f7; color: var(--primary-color); 
@@ -74,7 +74,7 @@
     <div id="event-list"></div>
 
     <div class="action-bar">
-        <button class="btn-copy" id="copyBtn">📋 複製 LINE 訊息 (僅含未來)</button>
+        <button class="btn-copy" id="copyBtn">📋 複製 LINE 訊息 (含今日)</button>
     </div>
 </div>
 
@@ -101,6 +101,7 @@
     const events = [
         { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
         { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: '詹弘廷醫師', notesHint: '' },
+        { id: 'ev11', date: '2026-02-24', weekday: '二', time: '今日', title: '耳鼻科門診 (美德院區)', location: '中國醫美德大樓', notesHint: '姐姐已陪同看診完成' },
         { id: 'ev3', date: '2026-02-26', weekday: '四', time: '08:30', title: '神經傳導 NCV', location: '檢查室', notesHint: '' },
         { id: 'ev4', date: '2026-02-26', weekday: '四', time: '10:00', title: '腦波 EEG', location: '2樓腦波室', notesHint: '前一天洗頭、不要髮油' },
         { id: 'ev9', date: '2026-02-28', weekday: '六', time: '09:00', title: '詹弘廷醫師回診 (A131/33號)', location: '醫療中心大樓A棟1樓', notesHint: '大約九點到' },
@@ -113,7 +114,6 @@
 
     let currentData = {};
 
-    // 取得今天日期的字串 (YYYY-MM-DD)
     function getTodayStr() {
         const now = new Date();
         return now.getFullYear() + '-' + 
@@ -138,7 +138,7 @@
 
         sortedEvents.forEach((ev, index) => {
             const state = data[ev.id] || { assignee: '未認領', note: '' };
-            const isPast = ev.date < todayStr; // 是否為過去行程
+            const isPast = ev.date < todayStr;
             const card = document.createElement('div');
             card.className = `event-card ${state.assignee !== '未認領' ? 'assigned' : ''} ${isPast ? 'past' : ''}`;
             
@@ -146,7 +146,8 @@
                 <div class="date-badge">
                     ${ev.date} (${ev.weekday}) ${ev.time}
                     ${index === 0 ? '<span class="new-tag">最遠</span>' : ''}
-                    ${isPast ? '<span style="font-size:0.7rem; color:#999; margin-left:5px;">(已結束)</span>' : ''}
+                    ${isPast ? '<span style="font-size:0.75rem; color:#e67e22; margin-left:5px;">●已結束</span>' : ''}
+                    ${ev.date === todayStr ? '<span style="font-size:0.75rem; color:#27ae60; margin-left:5px;">●今日</span>' : ''}
                 </div>
                 <div class="event-title">${ev.title}</div>
                 <div class="location-info">📍 ${ev.location}</div>
@@ -178,25 +179,21 @@
 
     document.getElementById('copyBtn').onclick = () => {
         const todayStr = getTodayStr();
-        // 過濾：只留下今天以後的行程
+        // 包含今天及以後
         const upcomingEvents = events.filter(ev => ev.date >= todayStr)
                                      .sort((a, b) => a.date.localeCompare(b.date));
 
-        if (upcomingEvents.length === 0) {
-            alert("目前沒有未來的行程可以複製。");
-            return;
-        }
-
-        let text = `【🏥 媽媽就醫行程分工 (截至今日)】\n\n`;
+        let text = `【🏥 媽媽就醫行程分工 (含今日)】\n\n`;
         upcomingEvents.forEach((ev, i) => {
             const state = currentData[ev.id] || { assignee: '未認領', note: '' };
-            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.time}\n   🔹${ev.title}\n   🙋負責：${state.assignee}\n`;
+            const status = ev.date === todayStr ? ' (今日★)' : '';
+            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.time}${status}\n   🔹${ev.title}\n   🙋負責：${state.assignee}\n`;
             if(state.note || ev.notesHint) text += `   📝備註：${[ev.notesHint, state.note].filter(x=>x).join('、')}\n`;
             text += `\n`;
         });
         text += `最新進度請見：${window.location.origin}${window.location.pathname}`;
         
-        navigator.clipboard.writeText(text).then(() => alert("已複製未來行程至 LINE！"));
+        navigator.clipboard.writeText(text).then(() => alert("已複製行程至 LINE！"));
     };
 </script>
 </body>
