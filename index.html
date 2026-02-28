@@ -98,7 +98,7 @@
 
     const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
     
-    // 行程資料：已加入 3/4 CT 與 3/7 神經科回診
+    // 行程資料：已加入 3/25 流感紀錄
     const events = [
         { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
         { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: '詹弘廷醫師', notesHint: '' },
@@ -111,6 +111,7 @@
         { id: 'ev13', date: '2026-03-07', weekday: '六', time: '上午', title: '神經科回診 (詹弘廷)', location: '醫療中心大樓A棟1樓(A131診/33號)', notesHint: '報到前先至血壓站量血壓及體重' },
         { id: 'ev7', date: '2026-03-10', weekday: '二', time: '上午', title: '牙齒檢查/治療', location: '牙科診所', notesHint: '' },
         { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev14', date: '2026-03-25', weekday: '三', time: '晚上', title: '流感門診 (江啟峰診所)', location: '江啟峰診所', notesHint: '流感症狀就醫紀錄' },
         { id: 'ev10', date: '2026-03-28', weekday: '六', time: '早上', title: '中國醫驗血', location: '中國醫藥大學附設醫院', notesHint: '空腹 8-12 小時' },
         { id: 'ev8', date: '2026-03-31', weekday: '二', time: '上午', title: '新陳代謝科回診', location: '醫院', notesHint: '' }
     ];
@@ -136,7 +137,7 @@
         list.innerHTML = '';
         const todayStr = getTodayStr();
 
-        // 排序：日期由晚到早
+        // 排序：日期由晚到早 (Descending)
         const sortedEvents = [...events].sort((a, b) => b.date.localeCompare(a.date));
 
         sortedEvents.forEach((ev, index) => {
@@ -180,7 +181,6 @@
 
     document.getElementById('copyBtn').onclick = () => {
         const todayStr = getTodayStr();
-        // 只過濾出今天及以後的行程，並由早到晚排序
         const upcomingEvents = events.filter(ev => ev.date >= todayStr)
                                      .sort((a, b) => a.date.localeCompare(b.date));
 
