@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏥 媽媽就醫行程分工(含完整紀錄)</title>
+    <title>🏥 媽媽就醫行程分工(雲端同步版)</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -38,7 +38,7 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.05); 
         }
         .event-card.assigned { border-left-color: var(--success-color); }
-        .event-card.past { opacity: 0.7; border-left-color: #bdc3c7; background: #fdfdfd; }
+        .event-card.past { opacity: 0.6; border-left-color: #bdc3c7; }
 
         .date-badge { 
             display: inline-block; background: #edf2f7; color: var(--primary-color); 
@@ -46,7 +46,7 @@
         }
         .event-title { font-size: 1.2rem; font-weight: bold; margin: 8px 0; color: #1a1a1a; }
         .location-info { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 8px; }
-        .hint { font-size: 0.85rem; color: #c0392b; margin-bottom: 10px; background: #fff5f5; padding: 5px 8px; border-radius: 4px; }
+        .hint { font-size: 0.85rem; color: #c0392b; margin-bottom: 10px; background: #fff5f5; padding: 5px 8px; border-radius: 4px; line-height: 1.4; }
 
         .control-group { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
         select, input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
@@ -74,7 +74,7 @@
     <div id="event-list"></div>
 
     <div class="action-bar">
-        <button class="btn-copy" id="copyBtn">📋 複製 LINE 訊息 (含今日)</button>
+        <button class="btn-copy" id="copyBtn">📋 複製 LINE 訊息 (僅含未來)</button>
     </div>
 </div>
 
@@ -98,6 +98,7 @@
 
     const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
     
+    // 行程資料：已加入 3/4 CT 與 3/7 神經科回診
     const events = [
         { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
         { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: '詹弘廷醫師', notesHint: '' },
@@ -106,6 +107,8 @@
         { id: 'ev4', date: '2026-02-26', weekday: '四', time: '10:00', title: '腦波 EEG', location: '2樓腦波室', notesHint: '前一天洗頭、不要髮油' },
         { id: 'ev9', date: '2026-02-28', weekday: '六', time: '09:00', title: '詹弘廷醫師回診 (A131/33號)', location: '醫療中心大樓A棟1樓', notesHint: '大約九點到' },
         { id: 'ev5', date: '2026-03-03', weekday: '二', time: '10:00', title: 'SSEP 檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev12', date: '2026-03-04', weekday: '三', time: '16:30', title: 'CT 電腦斷層 (需造影)', location: '醫療中心大樓一樓', notesHint: '前4小時空腹(可少量水)、提前10分報到、帶健保卡、需一家屬陪同' },
+        { id: 'ev13', date: '2026-03-07', weekday: '六', time: '上午', title: '神經科回診 (詹弘廷)', location: '醫療中心大樓A棟1樓(A131診/33號)', notesHint: '報到前先至血壓站量血壓及體重' },
         { id: 'ev7', date: '2026-03-10', weekday: '二', time: '上午', title: '牙齒檢查/治療', location: '牙科診所', notesHint: '' },
         { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' },
         { id: 'ev10', date: '2026-03-28', weekday: '六', time: '早上', title: '中國醫驗血', location: '中國醫藥大學附設醫院', notesHint: '空腹 8-12 小時' },
@@ -146,12 +149,10 @@
                 <div class="date-badge">
                     ${ev.date} (${ev.weekday}) ${ev.time}
                     ${index === 0 ? '<span class="new-tag">最遠</span>' : ''}
-                    ${isPast ? '<span style="font-size:0.75rem; color:#e67e22; margin-left:5px;">●已結束</span>' : ''}
-                    ${ev.date === todayStr ? '<span style="font-size:0.75rem; color:#27ae60; margin-left:5px;">●今日</span>' : ''}
                 </div>
                 <div class="event-title">${ev.title}</div>
                 <div class="location-info">📍 ${ev.location}</div>
-                ${ev.notesHint ? `<div class="hint">⚠️ ${ev.notesHint}</div>` : ''}
+                ${ev.notesHint ? `<div class="hint">⚠️ 注意事項：<br>${ev.notesHint}</div>` : ''}
                 <div class="control-group">
                     <select data-id="${ev.id}" class="assignee-select" ${isPast ? 'disabled' : ''}>
                         ${candidates.map(c => `<option value="${c}" ${state.assignee === c ? 'selected' : ''}>${c}</option>`).join('')}
@@ -179,21 +180,23 @@
 
     document.getElementById('copyBtn').onclick = () => {
         const todayStr = getTodayStr();
-        // 包含今天及以後
+        // 只過濾出今天及以後的行程，並由早到晚排序
         const upcomingEvents = events.filter(ev => ev.date >= todayStr)
                                      .sort((a, b) => a.date.localeCompare(b.date));
 
-        let text = `【🏥 媽媽就醫行程分工 (含今日)】\n\n`;
+        let text = `【🏥 媽媽就醫分工提醒 (今日起)】\n\n`;
         upcomingEvents.forEach((ev, i) => {
             const state = currentData[ev.id] || { assignee: '未認領', note: '' };
-            const status = ev.date === todayStr ? ' (今日★)' : '';
-            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.time}${status}\n   🔹${ev.title}\n   🙋負責：${state.assignee}\n`;
-            if(state.note || ev.notesHint) text += `   📝備註：${[ev.notesHint, state.note].filter(x=>x).join('、')}\n`;
+            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.time}\n   🔹${ev.title}\n   🙋負責：${state.assignee}\n`;
+            if(state.note || ev.notesHint) {
+                const note = [ev.notesHint, state.note].filter(x=>x).join('；');
+                text += `   📝備註：${note}\n`;
+            }
             text += `\n`;
         });
-        text += `最新進度請見：${window.location.origin}${window.location.pathname}`;
+        text += `最新進度見：${window.location.origin}${window.location.pathname}`;
         
-        navigator.clipboard.writeText(text).then(() => alert("已複製行程至 LINE！"));
+        navigator.clipboard.writeText(text).then(() => alert("已複製未來行程！"));
     };
 </script>
 </body>
