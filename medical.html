@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 媽媽就醫行程分工(雲端同步版)</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #4a90e2;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --border-color: #d1d8e0;
+            --text-main: #2d3436;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+        * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 10px; padding-bottom: 100px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        header { 
+            text-align: center; padding: 15px; 
+            background: linear-gradient(135deg, #4a90e2, #357abd); 
+            color: white; border-radius: 12px; margin-bottom: 15px; 
+        }
+        
+        #sync-status { font-size: 0.8rem; margin-top: 5px; opacity: 0.8; }
+
+        .new-tag {
+            background: #e74c3c; color: white; font-size: 0.7rem; padding: 2px 6px;
+            border-radius: 4px; margin-left: 8px; vertical-align: middle;
+        }
+
+        .event-card { 
+            background: var(--card-bg); border-radius: 12px; padding: 15px; 
+            margin-bottom: 12px; border-left: 8px solid var(--warning-color); 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05); 
+        }
+        .event-card.assigned { border-left-color: var(--success-color); }
+        .event-card.past { opacity: 0.6; border-left-color: #bdc3c7; }
+
+        .date-badge { 
+            display: inline-block; background: #edf2f7; color: var(--primary-color); 
+            padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 1rem; 
+        }
+        .event-title { font-size: 1.2rem; font-weight: bold; margin: 8px 0; color: #1a1a1a; }
+        .location-info { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 8px; }
+        .hint { font-size: 0.85rem; color: #c0392b; margin-bottom: 10px; background: #fff5f5; padding: 5px 8px; border-radius: 4px; line-height: 1.4; }
+
+        .control-group { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
+
+        .action-bar { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: white; padding: 15px; box-shadow: 0 -3px 10px rgba(0,0,0,0.1); 
+            display: flex; gap: 10px; max-width: 500px; margin: 0 auto; 
+        }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; color: white; }
+        .btn-copy { background: var(--success-color); }
+        
+        #loader { text-align: center; padding: 50px; color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏥 媽媽就醫行程分工</h1>
+        <div id="sync-status">📡 雲端連線中...</div>
+    </header>
+
+    <div id="loader">讀取雲端資料中...</div>
+    <div id="event-list"></div>
+
+    <div class="action-bar">
+        <button class="btn-copy" id="copyBtn">📋 複製 LINE 訊息 (僅含未來)</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCFcgyPnDEtcFN4rZmdMW0LT0qhKhE3XhY",
+        authDomain: "mom-medical.firebaseapp.com",
+        databaseURL: "https://mom-medical-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "mom-medical",
+        storageBucket: "mom-medical.firebasestorage.app",
+        messagingSenderId: "726908299188",
+        appId: "1:726908299188:web:727944c84e246adef8b4e1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const scheduleRef = ref(db, 'schedule');
+
+    const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
+    
+    // 行程資料：已將驗血日期改為 3/27 (五)
+    const events = [
+        { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
+        { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: '詹弘廷醫師', notesHint: '' },
+        { id: 'ev11', date: '2026-02-24', weekday: '二', time: '今日', title: '耳鼻科門診 (美德院區)', location: '中國醫美德大樓', notesHint: '姐姐已陪同看診完成' },
+        { id: 'ev14', date: '2026-02-25', weekday: '三', time: '晚上', title: '流感門診 (江啟峰診所)', location: '江啟峰診所', notesHint: '流感症狀就醫紀錄' },
+        { id: 'ev3', date: '2026-02-26', weekday: '四', time: '08:30', title: '神經傳導 NCV', location: '檢查室', notesHint: '' },
+        { id: 'ev4', date: '2026-02-26', weekday: '四', time: '10:00', title: '腦波 EEG', location: '2樓腦波室', notesHint: '前一天洗頭、不要髮油' },
+        { id: 'ev9', date: '2026-02-28', weekday: '六', time: '09:00', title: '詹弘廷醫師回診 (A131/33號)', location: '醫療中心大樓A棟1樓', notesHint: '大約九點到' },
+        { id: 'ev5', date: '2026-03-03', weekday: '二', time: '10:00', title: 'SSEP 檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev12', date: '2026-03-04', weekday: '三', time: '16:30', title: 'CT 電腦斷層 (需造影)', location: '醫療中心大樓一樓', notesHint: '前4小時空腹(可少量水)、提前10分報到、帶健保卡、需一家屬陪同' },
+        { id: 'ev13', date: '2026-03-07', weekday: '六', time: '上午', title: '神經科回診 (詹弘廷)', location: '醫療中心大樓A棟1樓(A131診/33號)', notesHint: '報到前先至血壓站量血壓及體重' },
+        { id: 'ev7', date: '2026-03-10', weekday: '二', time: '上午', title: '牙齒檢查/治療', location: '牙科診所', notesHint: '' },
+        { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev10', date: '2026-03-27', weekday: '五', time: '早上', title: '中國醫驗血', location: '中國醫藥大學附設醫院', notesHint: '空腹 8-12 小時' },
+        { id: 'ev15', date: '2026-03-28', weekday: '六', time: '上午', title: '神經科回診 (詹弘廷醫師/18號)', location: '醫療中心 A棟1樓 (A131診)', notesHint: '報到前先量血壓、體重；憑單插卡報到' },
+        { id: 'ev8', date: '2026-03-31', weekday: '二', time: '上午', title: '新陳代謝科回診', location: '醫院', notesHint: '' }
+    ];
+
+    let currentData = {};
+
+    function getTodayStr() {
+        const now = new Date();
+        return now.getFullYear() + '-' + 
+               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(now.getDate()).padStart(2, '0');
+    }
+
+    onValue(scheduleRef, (snapshot) => {
+        currentData = snapshot.val() || {};
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('sync-status').innerText = '✅ 雲端同步中';
+        render(currentData);
+    });
+
+    function render(data) {
+        const list = document.getElementById('event-list');
+        list.innerHTML = '';
+        const todayStr = getTodayStr();
+
+        // 排序：日期由晚到早
+        const sortedEvents = [...events].sort((a, b) => b.date.localeCompare(a.date));
+
+        sortedEvents.forEach((ev, index) => {
+            const state = data[ev.id] || { assignee: '未認領', note: '' };
+            const isPast = ev.date < todayStr;
+            const card = document.createElement('div');
+            card.className = `event-card ${state.assignee !== '未認領' ? 'assigned' : ''} ${isPast ? 'past' : ''}`;
+            
+            card.innerHTML = `
+                <div class="date-badge">
+                    ${ev.date} (${ev.weekday}) ${ev.time}
+                    ${index === 0 ? '<span class="new-tag">最遠</span>' : ''}
+                </div>
+                <div class="event-title">${ev.title}</div>
+                <div class="location-info">📍 ${ev.location}</div>
+                ${ev.notesHint ? `<div class="hint">⚠️ 注意事項：<br>${ev.notesHint}</div>` : ''}
+                <div class="control-group">
+                    <select data-id="${ev.id}" class="assignee-select" ${isPast ? 'disabled' : ''}>
+                        ${candidates.map(c => `<option value="${c}" ${state.assignee === c ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                    <input type="text" data-id="${ev.id}" class="note-input" placeholder="備註..." value="${state.note || ''}" ${isPast ? 'disabled' : ''}>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        document.querySelectorAll('.assignee-select').forEach(el => {
+            el.onchange = (e) => updateCloud(e.target.dataset.id, 'assignee', e.target.value);
+        });
+        document.querySelectorAll('.note-input').forEach(el => {
+            el.onblur = (e) => updateCloud(e.target.dataset.id, 'note', e.target.value);
+        });
+    }
+
+    function updateCloud(id, field, value) {
+        if (!currentData[id]) currentData[id] = { assignee: '未認領', note: '' };
+        currentData[id][field] = value;
+        document.getElementById('sync-status').innerText = '⏳ 正在儲存...';
+        set(scheduleRef, currentData);
+    }
+
+    document.getElementById('copyBtn').onclick = () => {
+        const todayStr = getTodayStr();
+        const upcomingEvents = events.filter(ev => ev.date >= todayStr)
+                                     .sort((a, b) => a.date.localeCompare(b.date));
+
+        let text = `【🏥 媽媽就醫行程分工提醒】\n\n`;
+        upcomingEvents.forEach((ev, i) => {
+            const state = currentData[ev.id] || { assignee: '未認領', note: '' };
+            text += `${i+1}. ${ev.date.slice(5)} (${ev.weekday}) ${ev.time}\n   🔹${ev.title}\n   🙋負責：${state.assignee}\n`;
+            if(state.note || ev.notesHint) {
+                const note = [ev.notesHint, state.note].filter(x=>x).join('；');
+                text += `   📝備註：${note}\n`;
+            }
+            text += `\n`;
+        });
+        text += `最新進度見：${window.location.origin}${window.location.pathname}`;
+        
+        navigator.clipboard.writeText(text).then(() => alert("已複製未來行程！"));
+    };
+</script>
+</body>
+</html>
