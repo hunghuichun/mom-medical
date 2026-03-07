@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 家庭雲端記帳(補帳萬能版)</title>
+    <title>💰 家庭雲端記帳(統計升級版)</title>
     <style>
         :root { --p-color: #27ae60; --bg: #f4f7f6; --danger: #e74c3c; --edit: #3498db; --text: #2d3436; }
         * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
@@ -16,6 +16,10 @@
             margin-bottom: 15px; box-shadow: 0 4px 10px rgba(39,174,96,0.2);
         }
         
+        /* 新增：月份過濾器樣式 */
+        .filter-area { background: white; padding: 12px; border-radius: 12px; text-align: center; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-area input[type="month"] { padding: 6px 12px; border-radius: 8px; border: 1px solid #27ae60; font-size: 1rem; color: var(--p-color); font-weight: bold; }
+
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--p-color); margin-top: 5px; }
@@ -61,20 +65,26 @@
         <div id="sync-status" style="font-size: 0.7rem; opacity: 0.8;">📡 連線中...</div>
     </header>
 
+    <!-- 查詢特定月份區塊 -->
+    <div class="filter-area">
+        <label for="filter-month">📅 查詢月份：</label>
+        <input type="month" id="filter-month">
+    </div>
+
     <div class="summary-grid">
-        <div class="stat-card"><div>今日累計</div><div id="day-total" class="stat-val">$0</div></div>
-        <div class="stat-card"><div>本月累計</div><div id="month-total" class="stat-val">$0</div></div>
+        <div class="stat-card"><div>今日總計</div><div id="day-total" class="stat-val">$0</div></div>
+        <div class="stat-card"><div id="month-label">本月總計</div><div id="month-total" class="stat-val">$0</div></div>
     </div>
 
     <div class="category-analysis">
-        <div style="font-weight:bold; margin-bottom:8px; color:var(--p-color);">📊 本月分類統計</div>
+        <div style="font-weight:bold; margin-bottom:8px; color:var(--p-color);" id="cat-label">📊 本月分類統計</div>
         <div id="cat-list"><div style="color:#ccc; text-align:center;">尚無資料</div></div>
     </div>
 
     <!-- 語音與補帳區 -->
     <div class="input-area">
         <div class="date-picker-wrap">
-            記帳日期：<input type="date" id="target-date">
+            新增/補帳日期：<input type="date" id="target-date">
         </div>
         <div id="status"></div>
         <div class="mic-btn-wrap">
@@ -102,10 +112,18 @@
     const db = getDatabase(app);
     const budgetRef = ref(db, 'budget_records');
 
-    // 設定日期選擇器預設為今天
+    // 設定日期與月份選擇器預設值
     const dateInput = document.getElementById('target-date');
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
+    const filterMonthInput = document.getElementById('filter-month');
+    
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    dateInput.value = todayStr;
+    
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    filterMonthInput.value = currentYearMonth;
+
+    let globalBudgetRecords = null; // 用來暫存資料庫抓下來的所有資料
 
     // --- 語音辨識 ---
     const micBtn = document.getElementById('micBtn');
@@ -136,10 +154,8 @@
         if (/(車|油|捷運|公車|交通|停車|票|洗車)/.test(item)) category = "交通";
         if (/(醫|藥|診|健|牙|掛號|醫美)/.test(item)) category = "醫療";
         
-        // 取得使用者選擇的日期
         const selectedDate = new Date(dateInput.value);
-        // 如果是今天，就用精確時間；如果是補帳，就設為該日的中午
-        const timestamp = (dateInput.value === today) ? Date.now() : selectedDate.setHours(12,0,0,0);
+        const timestamp = (dateInput.value === todayStr) ? Date.now() : selectedDate.setHours(12,0,0,0);
 
         push(budgetRef, { item, amount, category, time: timestamp });
     }
@@ -174,55 +190,101 @@
         });
     };
 
-    // --- 顯示與統計 ---
+    // 監聽使用者切換月份
+    filterMonthInput.addEventListener('change', () => {
+        if (globalBudgetRecords) {
+            renderData(globalBudgetRecords);
+        }
+    });
+
+    // --- 抓取與顯示統計 ---
     onValue(budgetRef, (snapshot) => {
-        const data = snapshot.val();
+        globalBudgetRecords = snapshot.val(); // 儲存至全域變數
+        renderData(globalBudgetRecords);      // 呼叫渲染函式
+    });
+
+    // 將畫面更新邏輯獨立出來，這樣切換月份時就不用重新跟資料庫要資料
+    function renderData(data) {
         const list = document.getElementById('record-list');
         const catList = document.getElementById('cat-list');
         list.innerHTML = "";
-        let dayTotal = 0; let monthTotal = 0; let catStats = {};
-        const now = new Date();
+        
+        let dayTotal = 0; 
+        let monthTotal = 0; 
+        let catStats = {};
+
+        // 取得目前選擇的月份
+        const [selYear, selMonth] = filterMonthInput.value.split('-').map(Number);
+        
+        // 更新標題顯示
+        document.getElementById('month-label').innerText = `${selMonth}月總計`;
+        document.getElementById('cat-label').innerText = `📊 ${selYear}年${selMonth}月 分析統計`;
 
         if (data) {
             const records = Object.keys(data).map(key => ({ key, ...data[key] }))
                                   .sort((a, b) => b.time - a.time);
             let lastDateLabel = "";
+            let hasMonthData = false;
+
             records.forEach(rec => {
                 const recDate = new Date(rec.time);
-                if (recDate.toDateString() === now.toDateString()) dayTotal += rec.amount;
-                if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) {
+                
+                // 【今日總計】永遠只算真實世界的「今天」
+                if (recDate.toDateString() === new Date().toDateString()) {
+                    dayTotal += rec.amount;
+                }
+
+                // 【分析統計】判斷這筆紀錄是否屬於「選擇的年份與月份」
+                // 注意：JS的getMonth()是0~11，所以要用 selMonth - 1
+                if (recDate.getFullYear() === selYear && recDate.getMonth() === (selMonth - 1)) {
                     monthTotal += rec.amount;
                     catStats[rec.category] = (catStats[rec.category] || 0) + rec.amount;
+                    hasMonthData = true;
+
+                    // 只把「選擇月份」的明細印出來，避免流水帳無止盡
+                    const dateLabel = recDate.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+                    if (dateLabel !== lastDateLabel) {
+                        const header = document.createElement('div');
+                        header.className = 'date-group-header';
+                        header.innerHTML = `📅 ${dateLabel}`;
+                        list.appendChild(header);
+                        lastDateLabel = dateLabel;
+                    }
+                    const div = document.createElement('div');
+                    div.className = 'record-item';
+                    div.innerHTML = `
+                        <div class="record-info">
+                            <strong>${rec.item}</strong>
+                            <div class="record-meta"><span class="cat-tag">${rec.category}</span>${recDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                        </div>
+                        <div class="record-actions">
+                            <span class="amt">$${rec.amount.toLocaleString()}</span>
+                            <button class="btn-sm" onclick="editRecord('${rec.key}', '${rec.item}', ${rec.amount}, ${rec.time})">✏️</button>
+                            <button class="btn-sm" onclick="confirmDelete('${rec.key}')">🗑️</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
                 }
-                const dateLabel = recDate.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
-                if (dateLabel !== lastDateLabel) {
-                    const header = document.createElement('div');
-                    header.className = 'date-group-header';
-                    header.innerHTML = `📅 ${dateLabel}`;
-                    list.appendChild(header);
-                    lastDateLabel = dateLabel;
-                }
-                const div = document.createElement('div');
-                div.className = 'record-item';
-                div.innerHTML = `
-                    <div class="record-info">
-                        <strong>${rec.item}</strong>
-                        <div class="record-meta"><span class="cat-tag">${rec.category}</span>${recDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                    </div>
-                    <div class="record-actions">
-                        <span class="amt">$${rec.amount.toLocaleString()}</span>
-                        <button class="btn-sm" onclick="editRecord('${rec.key}', '${rec.item}', ${rec.amount}, ${rec.time})">✏️</button>
-                        <button class="btn-sm" onclick="confirmDelete('${rec.key}')">🗑️</button>
-                    </div>
-                `;
-                list.appendChild(div);
             });
-            catList.innerHTML = Object.entries(catStats).sort((a,b)=>b[1]-a[1]).map(([n,s])=>`<div class="cat-row"><span>${n}</span><span>$${s.toLocaleString()}</span></div>`).join('');
+
+            // 繪製分類統計清單
+            if (hasMonthData) {
+                catList.innerHTML = Object.entries(catStats)
+                    .sort((a,b)=>b[1]-a[1])
+                    .map(([n,s])=>`<div class="cat-row"><span>${n}</span><span>$${s.toLocaleString()}</span></div>`)
+                    .join('');
+            } else {
+                catList.innerHTML = `<div style="color:#ccc; text-align:center;">此月份尚無記帳資料</div>`;
+                list.innerHTML = `<div style="text-align:center; padding: 20px; color:#999;">沒有明細</div>`;
+            }
+        } else {
+            catList.innerHTML = `<div style="color:#ccc; text-align:center;">尚無任何資料</div>`;
         }
+
         document.getElementById('day-total').innerText = `$${dayTotal.toLocaleString()}`;
         document.getElementById('month-total').innerText = `$${monthTotal.toLocaleString()}`;
-        document.getElementById('sync-status').innerText = "✅ 雲端同步中";
-    });
+        document.getElementById('sync-status').innerText = "✅ 雲端同步與分析完成";
+    }
 </script>
 </body>
 </html>
