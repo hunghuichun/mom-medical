@@ -22,7 +22,6 @@
             --danger: #c53030;
             --danger-bg: #fff5f5;
             --danger-border: #feb2b2;
-            --warning: #a16207;
             --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
@@ -115,7 +114,7 @@
             color: var(--primary-green);
         }
 
-        input, textarea, select {
+        input, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border-color);
@@ -163,8 +162,7 @@
         }
 
         .btn-main,
-        .btn-sub,
-        .btn-danger {
+        .btn-sub {
             padding: 14px 18px;
             border: none;
             border-radius: 35px;
@@ -189,14 +187,7 @@
             color: var(--soft-text);
         }
 
-        .btn-danger {
-            background: var(--danger-bg);
-            color: var(--danger);
-            border: 1px solid var(--danger-border);
-        }
-
         .btn-sub:hover,
-        .btn-danger:hover,
         .btn-main:hover {
             transform: translateY(-1px);
         }
@@ -321,12 +312,6 @@
             transform: translateY(-1px);
         }
 
-        .mini-btn.danger {
-            color: var(--danger);
-            border-color: var(--danger-border);
-            background: var(--danger-bg);
-        }
-
         .empty-hint {
             text-align: center;
             color: #999;
@@ -363,7 +348,7 @@
                 flex-direction: column;
             }
 
-            .btn-main, .btn-sub, .btn-danger {
+            .btn-main, .btn-sub {
                 width: 100%;
             }
         }
@@ -373,13 +358,13 @@
 <div class="container">
     <header>
         <h1>緩緩慧純</h1>
-        <div class="subtitle">人生整理師 ‧ 雲端日記寶盒 3.0</div>
+        <div class="subtitle">人生整理師・雲端日記寶盒 3.0</div>
     </header>
 
     <nav>
         <button onclick="showPage('write')" id="nav-write" class="active">✍️ 寫日記</button>
         <button onclick="showPage('list')" id="nav-list">📚 找回顧</button>
-        <a href="index.html" class="medical-back">🏥 回到醫療分工</a>
+        <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
     </nav>
 
     <div id="page-write" class="card">
@@ -463,7 +448,7 @@
     const firebaseConfig = {
         apiKey: "AIzaSyCxcA5bAPDqW5O4CaEqksyai-rU5EpvB-Y",
         authDomain: "my-diary-23345.firebaseapp.com",
-        databaseURL: "https://my-diary-23345-default-rtdb.firebaseio.com/",
+        databaseURL: "https://my-diary-23345-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "my-diary-23345",
         storageBucket: "my-diary-23345.firebasestorage.app",
         messagingSenderId: "442549444199",
@@ -614,24 +599,6 @@
         saveBtn.textContent = "同步到雲端";
     }
 
-    function deleteDiary(id) {
-        const diary = allDiaries.find(d => d.id === id);
-        const title = diary?.title?.trim() || "這篇日記";
-
-        if (!confirm(`確定要刪除「${title}」嗎？這個動作不能復原。`)) {
-            return;
-        }
-
-        db.child(id).remove()
-            .then(() => {
-                alert("這篇日記已刪除");
-                if (currentEditId === id) cancelEdit();
-            })
-            .catch((error) => {
-                alert("刪除失敗：" + error.message);
-            });
-    }
-
     function renderStats() {
         document.getElementById("stat-total").textContent = allDiaries.length;
 
@@ -748,7 +715,7 @@
 
             const metaEl = document.createElement("div");
             metaEl.className = "diary-meta";
-            metaEl.textContent = `📅 ${d.date || "未知日期"}${d.updatedAt ? "　·　已同步" : ""}`;
+            metaEl.textContent = `📅 ${d.date || "未知日期"}　·　已同步`;
 
             const titleEl = document.createElement("div");
             titleEl.className = "diary-title";
@@ -804,13 +771,7 @@
             editBtn.textContent = "編輯";
             editBtn.onclick = () => editDiary(d.id);
 
-            const deleteBtn = document.createElement("button");
-            deleteBtn.className = "mini-btn danger";
-            deleteBtn.textContent = "刪除";
-            deleteBtn.onclick = () => deleteDiary(d.id);
-
             actionsEl.appendChild(editBtn);
-            actionsEl.appendChild(deleteBtn);
 
             div.appendChild(metaEl);
             div.appendChild(titleEl);
