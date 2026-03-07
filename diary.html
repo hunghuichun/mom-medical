@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>緩緩慧純｜人生整理雲端日記 3.0</title>
+    <title>緩緩慧純｜人生整理雲端日記</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
@@ -112,6 +112,13 @@
             font-weight: bold;
             margin-bottom: 8px;
             color: var(--primary-green);
+        }
+
+        .helper-text {
+            color: var(--muted-text);
+            font-size: 14px;
+            margin-top: -2px;
+            margin-bottom: 10px;
         }
 
         input, textarea {
@@ -334,6 +341,31 @@
             margin-bottom: 16px;
         }
 
+        @media print {
+            nav,
+            .tool-row,
+            .filter-tags,
+            .status-bar,
+            .diary-actions,
+            .btn-row,
+            .editing-banner {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+                padding: 0;
+                color: black;
+            }
+
+            .card,
+            .diary-item {
+                box-shadow: none;
+                border: none;
+                background: white;
+            }
+        }
+
         @media (max-width: 768px) {
             body {
                 font-size: 16px;
@@ -358,13 +390,13 @@
 <div class="container">
     <header>
         <h1>緩緩慧純</h1>
-        <div class="subtitle">人生整理師・雲端日記寶盒 3.0</div>
+        <div class="subtitle">人生整理師・雲端日記寶盒</div>
     </header>
 
     <nav>
         <button onclick="showPage('write')" id="nav-write" class="active">✍️ 寫日記</button>
         <button onclick="showPage('list')" id="nav-list">📚 找回顧</button>
-       <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
+        <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
     </nav>
 
     <div id="page-write" class="card">
@@ -388,18 +420,21 @@
         </div>
 
         <div class="form-group">
-            <label>標籤分類</label>
+            <label>這篇沾到哪些主題</label>
+            <div class="helper-text">可不選，不用勉強分類，只要點一兩個妳覺得最接近的就好</div>
             <div class="option-group" id="tag-options">
-                <span class="tag-check" data-tag="AI對話">AI對話</span>
+                <span class="tag-check" data-tag="日常">日常</span>
                 <span class="tag-check" data-tag="靈感">靈感</span>
+                <span class="tag-check" data-tag="心情">心情</span>
+                <span class="tag-check" data-tag="家人">家人</span>
+                <span class="tag-check" data-tag="女兒">女兒</span>
                 <span class="tag-check" data-tag="運動">運動</span>
                 <span class="tag-check" data-tag="健康">健康</span>
-                <span class="tag-check" data-tag="情緒">情緒</span>
-                <span class="tag-check" data-tag="家人">家人</span>
-                <span class="tag-check" data-tag="理財">理財</span>
                 <span class="tag-check" data-tag="頻道">頻道</span>
-                <span class="tag-check" data-tag="女兒">女兒</span>
-                <span class="tag-check" data-tag="人生整理">人生整理</span>
+                <span class="tag-check" data-tag="AI">AI</span>
+                <span class="tag-check" data-tag="理財">理財</span>
+                <span class="tag-check" data-tag="回憶">回憶</span>
+                <span class="tag-check" data-tag="重要">重要</span>
             </div>
         </div>
 
@@ -421,7 +456,7 @@
                     <div class="stat-value" id="stat-month">0</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-title">常用標籤</div>
+                    <div class="stat-title">常用小記號</div>
                     <div class="stat-value" id="stat-top-tag">—</div>
                 </div>
                 <div class="stat-box">
@@ -433,6 +468,7 @@
             <div class="tool-row">
                 <input type="text" id="search-input" placeholder="搜尋標題、內容、標籤..." oninput="renderList()" />
                 <button class="btn-sub" onclick="clearSearch()">清除搜尋</button>
+                <button class="btn-sub" onclick="window.print()">列印目前頁面</button>
             </div>
 
             <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
@@ -679,7 +715,7 @@
         const search = (searchInput.value || "").trim().toLowerCase();
         diaryContainer.innerHTML = "";
 
-        let filtered = allDiaries.filter(d => {
+        const filtered = allDiaries.filter(d => {
             const title = (d.title || "").toLowerCase();
             const content = (d.content || "").toLowerCase();
             const tagText = (d.tags || []).join(" ").toLowerCase();
@@ -696,7 +732,7 @@
         });
 
         statusBar.textContent = activeTagFilter
-            ? `目前顯示 ${filtered.length} 篇，標籤篩選：${activeTagFilter}`
+            ? `目前顯示 ${filtered.length} 篇，小記號篩選：${activeTagFilter}`
             : `目前顯示 ${filtered.length} 篇`;
 
         if (filtered.length === 0) {
@@ -725,13 +761,13 @@
             contentEl.className = "diary-content";
 
             const fullText = d.content || "";
-            const isLong = fullText.length > 140;
+            const isLong = fullText.length > 160;
             let expanded = false;
 
             function updateContent() {
                 contentEl.textContent = expanded || !isLong
                     ? fullText
-                    : fullText.slice(0, 140) + "...";
+                    : fullText.slice(0, 160) + "...";
             }
             updateContent();
 
@@ -799,4 +835,3 @@
 </script>
 </body>
 </html>
-
