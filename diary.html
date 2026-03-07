@@ -1,101 +1,840 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>緩緩慧純｜人生整理雲端日記</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>緩緩慧純｜人生整理雲端日記 3.0</title>
+
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
     <style>
-        :root { --bg-color: #f9f7f2; --card-bg: #ffffff; --primary-green: #6b8e23; --soft-text: #4a4a4a; --accent-blue: #e1eef6; --border-color: #e0e0e0; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--bg-color); color: var(--soft-text); line-height: 1.8; margin: 0; padding: 20px; font-size: 18px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--primary-green); padding-bottom: 15px; }
-        h1 { color: var(--primary-green); margin-bottom: 5px; }
-        nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-        nav button, nav a { background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 25px; cursor: pointer; font-size: 16px; text-decoration: none; color: var(--soft-text); }
-        nav button.active { background: var(--primary-green); color: white; }
-        .medical-back { background: #fff5f5 !important; border-color: #feb2b2 !important; color: #c53030 !important; font-weight: bold; }
-        .card { background: var(--card-bg); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--primary-green); }
-        input, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 18px; box-sizing: border-box; }
-        textarea { height: 180px; }
-        .option-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        .tag-check { background: #f0f0f0; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 15px; }
-        .tag-check.selected { background: var(--primary-green); color: white; }
-        .btn-main { background: var(--primary-green); color: white; padding: 15px; border: none; border-radius: 35px; font-size: 20px; width: 100%; cursor: pointer; }
-        .diary-item { border-left: 6px solid var(--primary-green); margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 0 15px 15px 0; }
-        .tag-pill { background: var(--accent-blue); padding: 3px 12px; border-radius: 12px; font-size: 14px; margin-right: 5px; }
-        .hidden { display: none; }
+        :root {
+            --bg-color: #f9f7f2;
+            --card-bg: #ffffff;
+            --primary-green: #6b8e23;
+            --primary-green-dark: #58751d;
+            --soft-text: #4a4a4a;
+            --muted-text: #888;
+            --accent-blue: #e1eef6;
+            --accent-light: #f3f7ea;
+            --border-color: #e0e0e0;
+            --danger: #c53030;
+            --danger-bg: #fff5f5;
+            --danger-border: #feb2b2;
+            --warning: #a16207;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--soft-text);
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--primary-green);
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            color: var(--primary-green);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--muted-text);
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        nav button, nav a {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            color: var(--soft-text);
+            transition: 0.2s ease;
+        }
+
+        nav button:hover, nav a:hover {
+            transform: translateY(-1px);
+        }
+
+        nav button.active {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+
+        .medical-back {
+            background: var(--danger-bg) !important;
+            border-color: var(--danger-border) !important;
+            color: var(--danger) !important;
+            font-weight: bold;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary-green);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 18px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background: white;
+        }
+
+        textarea {
+            height: 220px;
+            resize: vertical;
+        }
+
+        .option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag-check {
+            background: #f0f0f0;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 15px;
+            user-select: none;
+            transition: 0.2s ease;
+        }
+
+        .tag-check:hover {
+            transform: translateY(-1px);
+        }
+
+        .tag-check.selected {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-main,
+        .btn-sub,
+        .btn-danger {
+            padding: 14px 18px;
+            border: none;
+            border-radius: 35px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .btn-main {
+            background: var(--primary-green);
+            color: white;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .btn-main:hover {
+            background: var(--primary-green-dark);
+        }
+
+        .btn-sub {
+            background: #f0f0f0;
+            color: var(--soft-text);
+        }
+
+        .btn-danger {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger-border);
+        }
+
+        .btn-sub:hover,
+        .btn-danger:hover,
+        .btn-main:hover {
+            transform: translateY(-1px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat-box {
+            background: var(--accent-light);
+            border: 1px solid #dce8c8;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .stat-title {
+            color: var(--muted-text);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            color: var(--primary-green-dark);
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .tool-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .tool-row input {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0 0;
+        }
+
+        .tag-filter-btn,
+        .tag-pill {
+            display: inline-block;
+            background: var(--accent-blue);
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 14px;
+            margin-right: 5px;
+            margin-top: 5px;
+            color: #35556d;
+        }
+
+        .tag-filter-btn {
+            border: none;
+            cursor: pointer;
+        }
+
+        .tag-filter-btn.active {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        .diary-item {
+            border-left: 6px solid var(--primary-green);
+            margin-bottom: 18px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .diary-meta {
+            font-size: 0.85em;
+            color: var(--muted-text);
+            margin-bottom: 6px;
+        }
+
+        .diary-title {
+            font-weight: bold;
+            color: var(--primary-green);
+            font-size: 1.08em;
+            margin-bottom: 8px;
+        }
+
+        .diary-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .diary-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .mini-btn {
+            background: #f4f4f4;
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--soft-text);
+        }
+
+        .mini-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .mini-btn.danger {
+            color: var(--danger);
+            border-color: var(--danger-border);
+            background: var(--danger-bg);
+        }
+
+        .empty-hint {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .status-bar {
+            margin-bottom: 14px;
+            font-size: 15px;
+            color: var(--muted-text);
+        }
+
+        .editing-banner {
+            background: #fff9db;
+            color: #8a6d1d;
+            border: 1px solid #f7e7a2;
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+                padding: 14px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .btn-row {
+                flex-direction: column;
+            }
+
+            .btn-main, .btn-sub, .btn-danger {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <header><h1>緩緩慧純</h1><div class="subtitle">人生整理師 ‧ 雲端日記寶盒</div></header>
+    <header>
+        <h1>緩緩慧純</h1>
+        <div class="subtitle">人生整理師 ‧ 雲端日記寶盒 3.0</div>
+    </header>
+
     <nav>
         <button onclick="showPage('write')" id="nav-write" class="active">✍️ 寫日記</button>
         <button onclick="showPage('list')" id="nav-list">📚 找回顧</button>
         <a href="index.html" class="medical-back">🏥 回到醫療分工</a>
     </nav>
+
     <div id="page-write" class="card">
-        <div class="form-group"><label>日期</label><input type="date" id="diary-date"></div>
-        <div class="form-group"><label>今日標題</label><input type="text" id="diary-title" placeholder="今天有什麼珍珠值得收藏？"></div>
-        <div class="form-group"><label>日記內容</label><textarea id="diary-content" placeholder="給生活的一點反思..."></textarea></div>
-        <div class="form-group"><label>標籤</label><div class="option-group" id="tag-options">
-            <span class="tag-check" onclick="this.classList.toggle('selected')">AI對話</span>
-            <span class="tag-check" onclick="this.classList.toggle('selected')">靈感</span>
-            <span class="tag-check" onclick="this.classList.toggle('selected')">女兒</span>
-            <span class="tag-check" onclick="this.classList.toggle('selected')">人生整理</span>
-        </div></div>
-        <button class="btn-main" onclick="saveToFirebase()">同步到雲端</button>
+        <div id="editing-banner" class="editing-banner hidden">
+            妳正在編輯一篇已存在的日記，修改後按「更新這篇日記」
+        </div>
+
+        <div class="form-group">
+            <label for="diary-date">日期</label>
+            <input type="date" id="diary-date" />
+        </div>
+
+        <div class="form-group">
+            <label for="diary-title">今日標題</label>
+            <input type="text" id="diary-title" placeholder="今天有什麼珍珠值得收藏？" />
+        </div>
+
+        <div class="form-group">
+            <label for="diary-content">日記內容</label>
+            <textarea id="diary-content" placeholder="給生活的一點反思..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>標籤分類</label>
+            <div class="option-group" id="tag-options">
+                <span class="tag-check" data-tag="AI對話">AI對話</span>
+                <span class="tag-check" data-tag="靈感">靈感</span>
+                <span class="tag-check" data-tag="運動">運動</span>
+                <span class="tag-check" data-tag="健康">健康</span>
+                <span class="tag-check" data-tag="情緒">情緒</span>
+                <span class="tag-check" data-tag="家人">家人</span>
+                <span class="tag-check" data-tag="理財">理財</span>
+                <span class="tag-check" data-tag="頻道">頻道</span>
+                <span class="tag-check" data-tag="女兒">女兒</span>
+                <span class="tag-check" data-tag="人生整理">人生整理</span>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-main" id="save-btn" onclick="saveOrUpdateDiary()">同步到雲端</button>
+            <button class="btn-sub hidden" id="cancel-edit-btn" onclick="cancelEdit()">取消編輯</button>
+        </div>
     </div>
-    <div id="page-list" class="hidden"><div class="card"><input type="text" id="search-input" placeholder="搜尋日記..." oninput="renderList()"><div id="diary-container" style="margin-top: 20px;"></div></div></div>
+
+    <div id="page-list" class="hidden">
+        <div class="card">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-title">總篇數</div>
+                    <div class="stat-value" id="stat-total">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">本月紀錄</div>
+                    <div class="stat-value" id="stat-month">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">常用標籤</div>
+                    <div class="stat-value" id="stat-top-tag">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">最近紀錄</div>
+                    <div class="stat-value" id="stat-latest">—</div>
+                </div>
+            </div>
+
+            <div class="tool-row">
+                <input type="text" id="search-input" placeholder="搜尋標題、內容、標籤..." oninput="renderList()" />
+                <button class="btn-sub" onclick="clearSearch()">清除搜尋</button>
+            </div>
+
+            <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
+
+            <div class="filter-tags" id="filter-tags"></div>
+
+            <div id="diary-container" style="margin-top: 20px;"></div>
+        </div>
+    </div>
 </div>
+
 <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyCxcA5bAPDqW5O4CaEqksyai-rU5EpvB-Y",
-      authDomain: "my-diary-23345.firebaseapp.com",
-      databaseURL: "https://my-diary-23345-default-rtdb.firebaseio.com/", 
-      projectId: "my-diary-23345",
-      storageBucket: "my-diary-23345.firebasestorage.app",
-      messagingSenderId: "442549444199",
-      appId: "1:442549444199:web:a14c1ffad4861bff0d3ec2"
+        apiKey: "AIzaSyCxcA5bAPDqW5O4CaEqksyai-rU5EpvB-Y",
+        authDomain: "my-diary-23345.firebaseapp.com",
+        databaseURL: "https://my-diary-23345-default-rtdb.firebaseio.com/",
+        projectId: "my-diary-23345",
+        storageBucket: "my-diary-23345.firebasestorage.app",
+        messagingSenderId: "442549444199",
+        appId: "1:442549444199:web:a14c1ffad4861bff0d3ec2"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('diaries');
-    document.getElementById('diary-date').valueAsDate = new Date();
-    let allDiaries = [];
-    function saveToFirebase() {
-        const title = document.getElementById('diary-title').value;
-        const content = document.getElementById('diary-content').value;
-        const date = document.getElementById('diary-date').value;
-        const tags = Array.from(document.querySelectorAll('.tag-check.selected')).map(el => el.innerText);
-        if(!content) return alert('請寫一點內容喔！');
-        db.push({ title, content, date, tags, timestamp: Date.now() }).then(() => { alert('珍珠已存入雲端！'); resetForm(); showPage('list'); });
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
-    db.on('value', (snapshot) => {
-        const data = snapshot.val(); allDiaries = [];
-        for (let id in data) allDiaries.unshift({ id, ...data[id] });
-        renderList();
+
+    const db = firebase.database().ref("diaries");
+
+    const diaryDate = document.getElementById("diary-date");
+    const diaryTitle = document.getElementById("diary-title");
+    const diaryContent = document.getElementById("diary-content");
+    const searchInput = document.getElementById("search-input");
+    const diaryContainer = document.getElementById("diary-container");
+    const statusBar = document.getElementById("status-bar");
+    const editingBanner = document.getElementById("editing-banner");
+    const saveBtn = document.getElementById("save-btn");
+    const cancelEditBtn = document.getElementById("cancel-edit-btn");
+    const filterTagsWrap = document.getElementById("filter-tags");
+
+    diaryDate.valueAsDate = new Date();
+
+    let allDiaries = [];
+    let currentEditId = null;
+    let activeTagFilter = "";
+
+    document.querySelectorAll(".tag-check").forEach(tagEl => {
+        tagEl.addEventListener("click", () => {
+            tagEl.classList.toggle("selected");
+        });
     });
-    function renderList() {
-        const container = document.getElementById('diary-container');
-        const search = document.getElementById('search-input').value.toLowerCase();
-        container.innerHTML = '';
-        allDiaries.filter(d => d.content.toLowerCase().includes(search) || d.title.toLowerCase().includes(search)).forEach(d => {
-            const div = document.createElement('div'); div.className = 'diary-item';
-            div.innerHTML = `<div style="font-size:0.8em; color:#888;">${d.date}</div><div style="font-weight:bold;">${d.title || '無標題'}</div><div>${d.content}</div>`;
-            container.appendChild(div);
+
+    db.on(
+        "value",
+        (snapshot) => {
+            const data = snapshot.val() || {};
+
+            allDiaries = Object.keys(data).map(id => ({
+                id,
+                ...data[id]
+            }));
+
+            allDiaries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            renderStats();
+            renderTagFilters();
+            renderList();
+        },
+        (error) => {
+            diaryContainer.innerHTML = "";
+            const hint = document.createElement("div");
+            hint.className = "empty-hint";
+            hint.textContent = "讀取雲端資料失敗：" + error.message;
+            diaryContainer.appendChild(hint);
+            statusBar.textContent = "讀取失敗";
+        }
+    );
+
+    function getSelectedTags() {
+        return Array.from(document.querySelectorAll(".tag-check.selected")).map(el => el.dataset.tag);
+    }
+
+    function setSelectedTags(tags = []) {
+        document.querySelectorAll(".tag-check").forEach(el => {
+            el.classList.toggle("selected", tags.includes(el.dataset.tag));
         });
     }
-    function showPage(p) {
-        document.getElementById('page-write').classList.toggle('hidden', p !== 'write');
-        document.getElementById('page-list').classList.toggle('hidden', p !== 'list');
-        document.getElementById('nav-write').classList.toggle('active', p === 'write');
-        document.getElementById('nav-list').classList.toggle('active', p === 'list');
+
+    function saveOrUpdateDiary() {
+        const title = diaryTitle.value.trim();
+        const content = diaryContent.value.trim();
+        const date = diaryDate.value;
+        const tags = getSelectedTags();
+
+        if (!content) {
+            alert("請寫下一點今天的感悟喔！");
+            return;
+        }
+
+        if (!date) {
+            alert("請確認日期。");
+            return;
+        }
+
+        const payload = {
+            title,
+            content,
+            date,
+            tags,
+            timestamp: currentEditId ? getOriginalTimestamp(currentEditId) : Date.now(),
+            updatedAt: Date.now()
+        };
+
+        if (currentEditId) {
+            db.child(currentEditId).update(payload)
+                .then(() => {
+                    alert("這篇日記已更新完成");
+                    cancelEdit();
+                    showPage("list");
+                })
+                .catch((error) => {
+                    alert("更新失敗：" + error.message);
+                });
+        } else {
+            db.push(payload)
+                .then(() => {
+                    alert("珍珠已同步至雲端！");
+                    resetForm();
+                    showPage("list");
+                })
+                .catch((error) => {
+                    alert("同步失敗：" + error.message);
+                });
+        }
     }
-    function resetForm() { document.getElementById('diary-title').value = ''; document.getElementById('diary-content').value = ''; document.querySelectorAll('.tag-check').forEach(el => el.classList.remove('selected')); }
+
+    function getOriginalTimestamp(id) {
+        const target = allDiaries.find(d => d.id === id);
+        return target?.timestamp || Date.now();
+    }
+
+    function editDiary(id) {
+        const diary = allDiaries.find(d => d.id === id);
+        if (!diary) return;
+
+        currentEditId = id;
+        diaryDate.value = diary.date || "";
+        diaryTitle.value = diary.title || "";
+        diaryContent.value = diary.content || "";
+        setSelectedTags(diary.tags || []);
+
+        editingBanner.classList.remove("hidden");
+        cancelEditBtn.classList.remove("hidden");
+        saveBtn.textContent = "更新這篇日記";
+
+        showPage("write");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function cancelEdit() {
+        currentEditId = null;
+        resetForm();
+        editingBanner.classList.add("hidden");
+        cancelEditBtn.classList.add("hidden");
+        saveBtn.textContent = "同步到雲端";
+    }
+
+    function deleteDiary(id) {
+        const diary = allDiaries.find(d => d.id === id);
+        const title = diary?.title?.trim() || "這篇日記";
+
+        if (!confirm(`確定要刪除「${title}」嗎？這個動作不能復原。`)) {
+            return;
+        }
+
+        db.child(id).remove()
+            .then(() => {
+                alert("這篇日記已刪除");
+                if (currentEditId === id) cancelEdit();
+            })
+            .catch((error) => {
+                alert("刪除失敗：" + error.message);
+            });
+    }
+
+    function renderStats() {
+        document.getElementById("stat-total").textContent = allDiaries.length;
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+
+        const monthCount = allDiaries.filter(d => {
+            if (!d.date) return false;
+            const dt = new Date(d.date);
+            return dt.getFullYear() === year && dt.getMonth() === month;
+        }).length;
+        document.getElementById("stat-month").textContent = monthCount;
+
+        const tagCounter = {};
+        allDiaries.forEach(d => {
+            (d.tags || []).forEach(tag => {
+                tagCounter[tag] = (tagCounter[tag] || 0) + 1;
+            });
+        });
+
+        let topTag = "—";
+        let topCount = 0;
+        for (const tag in tagCounter) {
+            if (tagCounter[tag] > topCount) {
+                topCount = tagCounter[tag];
+                topTag = tag;
+            }
+        }
+        document.getElementById("stat-top-tag").textContent = topTag;
+
+        document.getElementById("stat-latest").textContent = allDiaries[0]?.date || "—";
+    }
+
+    function renderTagFilters() {
+        filterTagsWrap.innerHTML = "";
+
+        const tagCounter = {};
+        allDiaries.forEach(d => {
+            (d.tags || []).forEach(tag => {
+                tagCounter[tag] = (tagCounter[tag] || 0) + 1;
+            });
+        });
+
+        const allBtn = document.createElement("button");
+        allBtn.className = "tag-filter-btn" + (activeTagFilter === "" ? " active" : "");
+        allBtn.textContent = "全部";
+        allBtn.onclick = () => {
+            activeTagFilter = "";
+            renderTagFilters();
+            renderList();
+        };
+        filterTagsWrap.appendChild(allBtn);
+
+        Object.keys(tagCounter)
+            .sort((a, b) => tagCounter[b] - tagCounter[a])
+            .forEach(tag => {
+                const btn = document.createElement("button");
+                btn.className = "tag-filter-btn" + (activeTagFilter === tag ? " active" : "");
+                btn.textContent = `${tag} (${tagCounter[tag]})`;
+                btn.onclick = () => {
+                    activeTagFilter = tag;
+                    renderTagFilters();
+                    renderList();
+                };
+                filterTagsWrap.appendChild(btn);
+            });
+    }
+
+    function clearSearch() {
+        searchInput.value = "";
+        activeTagFilter = "";
+        renderTagFilters();
+        renderList();
+    }
+
+    function renderList() {
+        const search = (searchInput.value || "").trim().toLowerCase();
+        diaryContainer.innerHTML = "";
+
+        let filtered = allDiaries.filter(d => {
+            const title = (d.title || "").toLowerCase();
+            const content = (d.content || "").toLowerCase();
+            const tagText = (d.tags || []).join(" ").toLowerCase();
+
+            const matchSearch =
+                title.includes(search) ||
+                content.includes(search) ||
+                tagText.includes(search);
+
+            const matchTag =
+                !activeTagFilter || (d.tags || []).includes(activeTagFilter);
+
+            return matchSearch && matchTag;
+        });
+
+        statusBar.textContent = activeTagFilter
+            ? `目前顯示 ${filtered.length} 篇，標籤篩選：${activeTagFilter}`
+            : `目前顯示 ${filtered.length} 篇`;
+
+        if (filtered.length === 0) {
+            const hint = document.createElement("div");
+            hint.className = "empty-hint";
+            hint.textContent = search || activeTagFilter
+                ? "找不到相關的珍珠..."
+                : "還沒有任何紀錄，開始寫下第一筆吧！";
+            diaryContainer.appendChild(hint);
+            return;
+        }
+
+        filtered.forEach(d => {
+            const div = document.createElement("div");
+            div.className = "diary-item";
+
+            const metaEl = document.createElement("div");
+            metaEl.className = "diary-meta";
+            metaEl.textContent = `📅 ${d.date || "未知日期"}${d.updatedAt ? "　·　已同步" : ""}`;
+
+            const titleEl = document.createElement("div");
+            titleEl.className = "diary-title";
+            titleEl.textContent = d.title || "無標題";
+
+            const contentEl = document.createElement("div");
+            contentEl.className = "diary-content";
+
+            const fullText = d.content || "";
+            const isLong = fullText.length > 140;
+            let expanded = false;
+
+            function updateContent() {
+                contentEl.textContent = expanded || !isLong
+                    ? fullText
+                    : fullText.slice(0, 140) + "...";
+            }
+            updateContent();
+
+            const tagsWrap = document.createElement("div");
+            tagsWrap.style.marginTop = "10px";
+            (d.tags || []).forEach(tag => {
+                const tagEl = document.createElement("button");
+                tagEl.className = "tag-pill";
+                tagEl.textContent = `#${tag}`;
+                tagEl.style.border = "none";
+                tagEl.style.cursor = "pointer";
+                tagEl.onclick = () => {
+                    activeTagFilter = tag;
+                    renderTagFilters();
+                    renderList();
+                };
+                tagsWrap.appendChild(tagEl);
+            });
+
+            const actionsEl = document.createElement("div");
+            actionsEl.className = "diary-actions";
+
+            if (isLong) {
+                const toggleBtn = document.createElement("button");
+                toggleBtn.className = "mini-btn";
+                toggleBtn.textContent = "展開全文";
+                toggleBtn.onclick = () => {
+                    expanded = !expanded;
+                    toggleBtn.textContent = expanded ? "收合" : "展開全文";
+                    updateContent();
+                };
+                actionsEl.appendChild(toggleBtn);
+            }
+
+            const editBtn = document.createElement("button");
+            editBtn.className = "mini-btn";
+            editBtn.textContent = "編輯";
+            editBtn.onclick = () => editDiary(d.id);
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "mini-btn danger";
+            deleteBtn.textContent = "刪除";
+            deleteBtn.onclick = () => deleteDiary(d.id);
+
+            actionsEl.appendChild(editBtn);
+            actionsEl.appendChild(deleteBtn);
+
+            div.appendChild(metaEl);
+            div.appendChild(titleEl);
+            div.appendChild(contentEl);
+            div.appendChild(tagsWrap);
+            div.appendChild(actionsEl);
+
+            diaryContainer.appendChild(div);
+        });
+    }
+
+    function showPage(page) {
+        document.getElementById("page-write").classList.toggle("hidden", page !== "write");
+        document.getElementById("page-list").classList.toggle("hidden", page !== "list");
+        document.getElementById("nav-write").classList.toggle("active", page === "write");
+        document.getElementById("nav-list").classList.toggle("active", page === "list");
+    }
+
+    function resetForm() {
+        diaryTitle.value = "";
+        diaryContent.value = "";
+        diaryDate.valueAsDate = new Date();
+        setSelectedTags([]);
+    }
 </script>
 </body>
 </html>
