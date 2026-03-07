@@ -1,1 +1,101 @@
-
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>緩緩慧純｜人生整理雲端日記</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        :root { --bg-color: #f9f7f2; --card-bg: #ffffff; --primary-green: #6b8e23; --soft-text: #4a4a4a; --accent-blue: #e1eef6; --border-color: #e0e0e0; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--bg-color); color: var(--soft-text); line-height: 1.8; margin: 0; padding: 20px; font-size: 18px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--primary-green); padding-bottom: 15px; }
+        h1 { color: var(--primary-green); margin-bottom: 5px; }
+        nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        nav button, nav a { background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 25px; cursor: pointer; font-size: 16px; text-decoration: none; color: var(--soft-text); }
+        nav button.active { background: var(--primary-green); color: white; }
+        .medical-back { background: #fff5f5 !important; border-color: #feb2b2 !important; color: #c53030 !important; font-weight: bold; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--primary-green); }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 18px; box-sizing: border-box; }
+        textarea { height: 180px; }
+        .option-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .tag-check { background: #f0f0f0; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 15px; }
+        .tag-check.selected { background: var(--primary-green); color: white; }
+        .btn-main { background: var(--primary-green); color: white; padding: 15px; border: none; border-radius: 35px; font-size: 20px; width: 100%; cursor: pointer; }
+        .diary-item { border-left: 6px solid var(--primary-green); margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 0 15px 15px 0; }
+        .tag-pill { background: var(--accent-blue); padding: 3px 12px; border-radius: 12px; font-size: 14px; margin-right: 5px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header><h1>緩緩慧純</h1><div class="subtitle">人生整理師 ‧ 雲端日記寶盒</div></header>
+    <nav>
+        <button onclick="showPage('write')" id="nav-write" class="active">✍️ 寫日記</button>
+        <button onclick="showPage('list')" id="nav-list">📚 找回顧</button>
+        <a href="index.html" class="medical-back">🏥 回到醫療分工</a>
+    </nav>
+    <div id="page-write" class="card">
+        <div class="form-group"><label>日期</label><input type="date" id="diary-date"></div>
+        <div class="form-group"><label>今日標題</label><input type="text" id="diary-title" placeholder="今天有什麼珍珠值得收藏？"></div>
+        <div class="form-group"><label>日記內容</label><textarea id="diary-content" placeholder="給生活的一點反思..."></textarea></div>
+        <div class="form-group"><label>標籤</label><div class="option-group" id="tag-options">
+            <span class="tag-check" onclick="this.classList.toggle('selected')">AI對話</span>
+            <span class="tag-check" onclick="this.classList.toggle('selected')">靈感</span>
+            <span class="tag-check" onclick="this.classList.toggle('selected')">女兒</span>
+            <span class="tag-check" onclick="this.classList.toggle('selected')">人生整理</span>
+        </div></div>
+        <button class="btn-main" onclick="saveToFirebase()">同步到雲端</button>
+    </div>
+    <div id="page-list" class="hidden"><div class="card"><input type="text" id="search-input" placeholder="搜尋日記..." oninput="renderList()"><div id="diary-container" style="margin-top: 20px;"></div></div></div>
+</div>
+<script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxcA5bAPDqW5O4CaEqksyai-rU5EpvB-Y",
+      authDomain: "my-diary-23345.firebaseapp.com",
+      databaseURL: "https://my-diary-23345-default-rtdb.firebaseio.com/", 
+      projectId: "my-diary-23345",
+      storageBucket: "my-diary-23345.firebasestorage.app",
+      messagingSenderId: "442549444199",
+      appId: "1:442549444199:web:a14c1ffad4861bff0d3ec2"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('diaries');
+    document.getElementById('diary-date').valueAsDate = new Date();
+    let allDiaries = [];
+    function saveToFirebase() {
+        const title = document.getElementById('diary-title').value;
+        const content = document.getElementById('diary-content').value;
+        const date = document.getElementById('diary-date').value;
+        const tags = Array.from(document.querySelectorAll('.tag-check.selected')).map(el => el.innerText);
+        if(!content) return alert('請寫一點內容喔！');
+        db.push({ title, content, date, tags, timestamp: Date.now() }).then(() => { alert('珍珠已存入雲端！'); resetForm(); showPage('list'); });
+    }
+    db.on('value', (snapshot) => {
+        const data = snapshot.val(); allDiaries = [];
+        for (let id in data) allDiaries.unshift({ id, ...data[id] });
+        renderList();
+    });
+    function renderList() {
+        const container = document.getElementById('diary-container');
+        const search = document.getElementById('search-input').value.toLowerCase();
+        container.innerHTML = '';
+        allDiaries.filter(d => d.content.toLowerCase().includes(search) || d.title.toLowerCase().includes(search)).forEach(d => {
+            const div = document.createElement('div'); div.className = 'diary-item';
+            div.innerHTML = `<div style="font-size:0.8em; color:#888;">${d.date}</div><div style="font-weight:bold;">${d.title || '無標題'}</div><div>${d.content}</div>`;
+            container.appendChild(div);
+        });
+    }
+    function showPage(p) {
+        document.getElementById('page-write').classList.toggle('hidden', p !== 'write');
+        document.getElementById('page-list').classList.toggle('hidden', p !== 'list');
+        document.getElementById('nav-write').classList.toggle('active', p === 'write');
+        document.getElementById('nav-list').classList.toggle('active', p === 'list');
+    }
+    function resetForm() { document.getElementById('diary-title').value = ''; document.getElementById('diary-content').value = ''; document.querySelectorAll('.tag-check').forEach(el => el.classList.remove('selected')); }
+</script>
+</body>
+</html>
