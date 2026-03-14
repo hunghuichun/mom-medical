@@ -79,7 +79,6 @@
         <div id="sync-status" style="font-size: 0.7rem; opacity: 0.8;">📡 連線中...</div>
     </header>
 
-    <!-- 查詢特定月份區塊 (加入匯出按鈕) -->
     <div class="filter-area">
         <label for="filter-month">📅</label>
         <input type="month" id="filter-month">
@@ -103,7 +102,6 @@
         <div id="top-expense-box"></div>
     </div>
 
-    <!-- 語音與補帳區 -->
     <div class="input-area">
         <div class="date-picker-wrap">
             新增/補帳日期：<input type="date" id="target-date">
@@ -137,7 +135,7 @@
     const dateInput = document.getElementById('target-date');
     const filterMonthInput = document.getElementById('filter-month');
     const viewAllBtn = document.getElementById('view-all-btn');
-    const exportBtn = document.getElementById('export-btn'); // 抓取匯出按鈕
+    const exportBtn = document.getElementById('export-btn'); 
     
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -149,7 +147,20 @@
     let globalBudgetRecords = null; 
     let myPieChart = null; 
     let isViewAll = false; 
-    let currentDisplayRecords =[]; // 專門用來裝「目前畫面上顯示的資料」，準備給匯出用的
+    let currentDisplayRecords =[]; 
+
+    // === 💡 新增：獨立的智慧分類大腦 ===
+    function getCategory(item) {
+        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳|水|全聯|超市|咖啡|早餐|午餐|晚餐|宵夜|零食|餅乾|便當)/.test(item)) return "飲食";
+        if (/(車|油|捷運|公車|交通|停車|票|洗車|高鐵|台鐵|機車|計程車|uber|悠遊卡)/i.test(item)) return "交通";
+        if (/(醫|藥|診|健|牙|掛號|醫美|醫院|保健|維他命)/.test(item)) return "醫療";
+        if (/(電|水|瓦斯|網|電話|租|繳費|卡費|第四台|管理費)/.test(item)) return "帳單";
+        if (/(電影|玩|唱|遊戲|netflix|玩具|旅遊|住宿|飯店|出國|門票|展覽)/i.test(item)) return "娛樂";
+        if (/(衛生紙|洗髮精|沐浴乳|用品|家具|清潔|垃圾袋|生活|日用|雜貨|五金|修繕|保鮮盒)/.test(item)) return "居家";
+        if (/(衣|褲|鞋|包|剪髮|保養|化妝|美容|洗面乳|面膜)/.test(item)) return "服飾美容";
+        if (/(奶粉|尿布|托嬰|補習|學校|學費|安親|保母|玩具|童裝)/.test(item)) return "育兒";
+        return "雜項";
+    }
 
     // --- 語音辨識 ---
     const micBtn = document.getElementById('micBtn');
@@ -175,12 +186,7 @@
     }
 
     function addRecord(item, amount) {
-        let category = "雜項";
-        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳|水|全聯|超市)/.test(item)) category = "飲食";
-        if (/(車|油|捷運|公車|交通|停車|票|洗車)/.test(item)) category = "交通";
-        if (/(醫|藥|診|健|牙|掛號|醫美)/.test(item)) category = "醫療";
-        if (/(電|水|瓦斯|網|電話|租)/.test(item)) category = "帳單";
-        
+        const category = getCategory(item);
         const selectedDate = new Date(dateInput.value);
         const timestamp = (dateInput.value === todayStr) ? Date.now() : selectedDate.setHours(12,0,0,0);
 
@@ -208,11 +214,13 @@
         if (!newDateStr) return;
         
         const newTime = new Date(newDateStr).setHours(12,0,0,0);
+        // 根據修改後的新名稱，重新判斷分類
+        const newCategory = getCategory(newItem);
 
         set(ref(db, `budget_records/${key}`), {
             item: newItem,
             amount: parseInt(newAmount),
-            category: "已修正",
+            category: newCategory,
             time: newTime
         });
     };
@@ -230,35 +238,30 @@
         if (globalBudgetRecords) renderData(globalBudgetRecords);
     });
 
-    // --- 新增：匯出 Excel 的魔法 ---
+    // --- 匯出 Excel 的魔法 ---
     exportBtn.addEventListener('click', () => {
         if (currentDisplayRecords.length === 0) {
             alert("目前沒有資料可以匯出喔！請先確認有記帳紀錄。");
             return;
         }
 
-        // 加入防亂碼的隱藏密碼 (\uFEFF)，讓 Excel 乖乖聽話
         let csvContent = "\uFEFF"; 
-        csvContent += "日期,時間,分類,項目,金額\n"; // 這是表頭
+        csvContent += "日期,時間,分類,項目,金額\n"; 
 
-        // 把畫面上的資料一筆一筆塞進表格裡
         currentDisplayRecords.forEach(rec => {
             const d = new Date(rec.time);
             const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
             const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-            // 防止名稱裡面有逗號會搞亂表格，用雙引號包起來
             const safeItem = `"${(rec.item || "").replace(/"/g, '""')}"`; 
             
             csvContent += `${dateStr},${timeStr},${rec.category},${safeItem},${rec.amount}\n`;
         });
 
-        // 建立下載檔案
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
 
-        // 決定檔名 (看是某個月，還是全部歷史)
         let filename = "記帳紀錄.csv";
         if (!isViewAll && filterMonthInput.value) {
             filename = `家庭記帳_${filterMonthInput.value}.csv`;
@@ -284,7 +287,6 @@
         const topExpenseBox = document.getElementById('top-expense-box');
         list.innerHTML = "";
         
-        // 每次重新畫面的時候，先把準備匯出的袋子清空
         currentDisplayRecords =[]; 
 
         let dayTotal = 0; 
@@ -319,7 +321,6 @@
                 const isMatch = isViewAll || (recDate.getFullYear() === selYear && recDate.getMonth() === (selMonth - 1));
 
                 if (isMatch) {
-                    // 把這筆資料裝進「準備匯出的袋子」裡
                     currentDisplayRecords.push(rec);
 
                     viewTotal += rec.amount;
