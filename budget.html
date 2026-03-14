@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 家庭雲端記帳(統計升級版)</title>
+    <title>💰 家庭雲端記帳(Excel匯出升級版)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --p-color: #27ae60; --bg: #f4f7f6; --danger: #e74c3c; --edit: #3498db; --text: #2d3436; }
+        :root { --p-color: #27ae60; --bg: #f4f7f6; --danger: #e74c3c; --text: #2d3436; }
         * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
         body { background: var(--bg); margin: 0; padding: 10px; padding-bottom: 120px; color: var(--text); }
         .container { max-width: 500px; margin: 0 auto; }
@@ -16,21 +17,34 @@
             margin-bottom: 15px; box-shadow: 0 4px 10px rgba(39,174,96,0.2);
         }
         
-        /* 新增：月份過濾器樣式 */
-        .filter-area { background: white; padding: 12px; border-radius: 12px; text-align: center; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .filter-area input[type="month"] { padding: 6px 12px; border-radius: 8px; border: 1px solid #27ae60; font-size: 1rem; color: var(--p-color); font-weight: bold; }
+        .filter-area { 
+            background: white; padding: 12px; border-radius: 12px; text-align: center; 
+            margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap;
+        }
+        .filter-area input[type="month"] { padding: 6px 8px; border-radius: 8px; border: 1px solid #27ae60; font-size: 0.95rem; color: var(--p-color); font-weight: bold; }
+        
+        .view-all-btn { background: #3498db; color: white; border: none; padding: 8px 10px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(52,152,219,0.3); font-size: 0.9rem;}
+        /* 新增：匯出Excel按鈕樣式 */
+        .export-btn { background: #f39c12; color: white; border: none; padding: 8px 10px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(243,156,18,0.3); font-size: 0.9rem;}
 
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--p-color); margin-top: 5px; }
 
         .category-analysis { 
-            background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 15px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.85rem;
+            background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.9rem;
         }
-        .cat-row { display: flex; justify-content: space-between; margin-bottom: 5px; padding: 2px 0; border-bottom: 1px dashed #eee; }
+        .chart-container { position: relative; height: 220px; width: 100%; margin-bottom: 15px; }
+        
+        .cat-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding: 4px 0; border-bottom: 1px dashed #eee; align-items: center;}
+        .cat-name { font-weight: bold; color: #555; }
+        .cat-pct { font-size: 0.75rem; color: #888; background: #f0f0f0; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+        
+        .top-expense { background: #fff3f3; border-left: 4px solid #e74c3c; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 0.85rem;}
+        .top-expense-title { color: #e74c3c; font-weight: bold; margin-bottom: 4px;}
 
-        /* 語音與補帳區 */
         .input-area { background: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .date-picker-wrap { margin-bottom: 10px; font-size: 0.9rem; color: #666; }
         input[type="date"] { padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; color: var(--text); }
@@ -65,20 +79,28 @@
         <div id="sync-status" style="font-size: 0.7rem; opacity: 0.8;">📡 連線中...</div>
     </header>
 
-    <!-- 查詢特定月份區塊 -->
+    <!-- 查詢特定月份區塊 (加入匯出按鈕) -->
     <div class="filter-area">
-        <label for="filter-month">📅 查詢月份：</label>
+        <label for="filter-month">📅</label>
         <input type="month" id="filter-month">
+        <button id="view-all-btn" class="view-all-btn">🌍 看全部</button>
+        <button id="export-btn" class="export-btn">📥 匯出</button>
     </div>
 
     <div class="summary-grid">
-        <div class="stat-card"><div>今日總計</div><div id="day-total" class="stat-val">$0</div></div>
+        <div class="stat-card"><div>今日花費</div><div id="day-total" class="stat-val">$0</div></div>
         <div class="stat-card"><div id="month-label">本月總計</div><div id="month-total" class="stat-val">$0</div></div>
     </div>
 
     <div class="category-analysis">
-        <div style="font-weight:bold; margin-bottom:8px; color:var(--p-color);" id="cat-label">📊 本月分類統計</div>
+        <div style="font-weight:bold; margin-bottom:12px; color:var(--p-color); text-align:center;" id="cat-label">📊 分析統計</div>
+        
+        <div class="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
+
         <div id="cat-list"><div style="color:#ccc; text-align:center;">尚無資料</div></div>
+        <div id="top-expense-box"></div>
     </div>
 
     <!-- 語音與補帳區 -->
@@ -98,7 +120,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, push, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCFcgyPnDEtcFN4rZmdMW0LT0qhKhE3XhY",
@@ -112,9 +134,10 @@
     const db = getDatabase(app);
     const budgetRef = ref(db, 'budget_records');
 
-    // 設定日期與月份選擇器預設值
     const dateInput = document.getElementById('target-date');
     const filterMonthInput = document.getElementById('filter-month');
+    const viewAllBtn = document.getElementById('view-all-btn');
+    const exportBtn = document.getElementById('export-btn'); // 抓取匯出按鈕
     
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -123,7 +146,10 @@
     const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     filterMonthInput.value = currentYearMonth;
 
-    let globalBudgetRecords = null; // 用來暫存資料庫抓下來的所有資料
+    let globalBudgetRecords = null; 
+    let myPieChart = null; 
+    let isViewAll = false; 
+    let currentDisplayRecords =[]; // 專門用來裝「目前畫面上顯示的資料」，準備給匯出用的
 
     // --- 語音辨識 ---
     const micBtn = document.getElementById('micBtn');
@@ -150,9 +176,10 @@
 
     function addRecord(item, amount) {
         let category = "雜項";
-        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳|水)/.test(item)) category = "飲食";
+        if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳|水|全聯|超市)/.test(item)) category = "飲食";
         if (/(車|油|捷運|公車|交通|停車|票|洗車)/.test(item)) category = "交通";
         if (/(醫|藥|診|健|牙|掛號|醫美)/.test(item)) category = "醫療";
+        if (/(電|水|瓦斯|網|電話|租)/.test(item)) category = "帳單";
         
         const selectedDate = new Date(dateInput.value);
         const timestamp = (dateInput.value === todayStr) ? Date.now() : selectedDate.setHours(12,0,0,0);
@@ -168,7 +195,7 @@
         addRecord(item, parseInt(amount));
     };
 
-    window.confirmDelete = (key) => { if (confirm("刪除這筆嗎？")) remove(ref(db, `budget_records/${key}`)); };
+    window.confirmDelete = (key) => { if (confirm("確定要刪除這筆紀錄嗎？")) remove(ref(db, `budget_records/${key}`)); };
     
     window.editRecord = (key, currentItem, currentAmount, currentTime) => {
         const newItem = prompt("名稱：", currentItem);
@@ -190,58 +217,123 @@
         });
     };
 
-    // 監聽使用者切換月份
+    // 當改變月份時，關閉「看全部」模式
     filterMonthInput.addEventListener('change', () => {
-        if (globalBudgetRecords) {
-            renderData(globalBudgetRecords);
+        isViewAll = false;
+        if (globalBudgetRecords) renderData(globalBudgetRecords);
+    });
+
+    // 當按下「看全部」時，開啟模式
+    viewAllBtn.addEventListener('click', () => {
+        isViewAll = true;
+        filterMonthInput.value = ""; 
+        if (globalBudgetRecords) renderData(globalBudgetRecords);
+    });
+
+    // --- 新增：匯出 Excel 的魔法 ---
+    exportBtn.addEventListener('click', () => {
+        if (currentDisplayRecords.length === 0) {
+            alert("目前沒有資料可以匯出喔！請先確認有記帳紀錄。");
+            return;
         }
+
+        // 加入防亂碼的隱藏密碼 (\uFEFF)，讓 Excel 乖乖聽話
+        let csvContent = "\uFEFF"; 
+        csvContent += "日期,時間,分類,項目,金額\n"; // 這是表頭
+
+        // 把畫面上的資料一筆一筆塞進表格裡
+        currentDisplayRecords.forEach(rec => {
+            const d = new Date(rec.time);
+            const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+            const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            // 防止名稱裡面有逗號會搞亂表格，用雙引號包起來
+            const safeItem = `"${(rec.item || "").replace(/"/g, '""')}"`; 
+            
+            csvContent += `${dateStr},${timeStr},${rec.category},${safeItem},${rec.amount}\n`;
+        });
+
+        // 建立下載檔案
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+
+        // 決定檔名 (看是某個月，還是全部歷史)
+        let filename = "記帳紀錄.csv";
+        if (!isViewAll && filterMonthInput.value) {
+            filename = `家庭記帳_${filterMonthInput.value}.csv`;
+        } else {
+            filename = `家庭記帳_全部歷史.csv`;
+        }
+
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 
-    // --- 抓取與顯示統計 ---
     onValue(budgetRef, (snapshot) => {
-        globalBudgetRecords = snapshot.val(); // 儲存至全域變數
-        renderData(globalBudgetRecords);      // 呼叫渲染函式
+        globalBudgetRecords = snapshot.val(); 
+        renderData(globalBudgetRecords);      
     });
 
-    // 將畫面更新邏輯獨立出來，這樣切換月份時就不用重新跟資料庫要資料
     function renderData(data) {
         const list = document.getElementById('record-list');
         const catList = document.getElementById('cat-list');
+        const topExpenseBox = document.getElementById('top-expense-box');
         list.innerHTML = "";
         
-        let dayTotal = 0; 
-        let monthTotal = 0; 
-        let catStats = {};
+        // 每次重新畫面的時候，先把準備匯出的袋子清空
+        currentDisplayRecords =[]; 
 
-        // 取得目前選擇的月份
-        const [selYear, selMonth] = filterMonthInput.value.split('-').map(Number);
+        let dayTotal = 0; 
+        let viewTotal = 0; 
+        let catStats = {};
+        let maxExpense = { item: "", amount: 0, date: "" };
+
+        let selYear = 0, selMonth = 0;
         
-        // 更新標題顯示
-        document.getElementById('month-label').innerText = `${selMonth}月總計`;
-        document.getElementById('cat-label').innerText = `📊 ${selYear}年${selMonth}月 分析統計`;
+        if (!isViewAll && filterMonthInput.value) {
+            [selYear, selMonth] = filterMonthInput.value.split('-').map(Number);
+            document.getElementById('month-label').innerText = `${selMonth}月總計`;
+            document.getElementById('cat-label').innerText = `📊 ${selYear}年${selMonth}月 分析統計`;
+        } else {
+            document.getElementById('month-label').innerText = `歷史總計`;
+            document.getElementById('cat-label').innerText = `🌍 全部歷史 分析統計`;
+        }
 
         if (data) {
             const records = Object.keys(data).map(key => ({ key, ...data[key] }))
-                                  .sort((a, b) => b.time - a.time);
+                                  .sort((a, b) => b.time - a.time); 
             let lastDateLabel = "";
-            let hasMonthData = false;
+            let hasDataInView = false;
 
             records.forEach(rec => {
                 const recDate = new Date(rec.time);
                 
-                // 【今日總計】永遠只算真實世界的「今天」
                 if (recDate.toDateString() === new Date().toDateString()) {
                     dayTotal += rec.amount;
                 }
 
-                // 【分析統計】判斷這筆紀錄是否屬於「選擇的年份與月份」
-                // 注意：JS的getMonth()是0~11，所以要用 selMonth - 1
-                if (recDate.getFullYear() === selYear && recDate.getMonth() === (selMonth - 1)) {
-                    monthTotal += rec.amount;
-                    catStats[rec.category] = (catStats[rec.category] || 0) + rec.amount;
-                    hasMonthData = true;
+                const isMatch = isViewAll || (recDate.getFullYear() === selYear && recDate.getMonth() === (selMonth - 1));
 
-                    // 只把「選擇月份」的明細印出來，避免流水帳無止盡
+                if (isMatch) {
+                    // 把這筆資料裝進「準備匯出的袋子」裡
+                    currentDisplayRecords.push(rec);
+
+                    viewTotal += rec.amount;
+                    catStats[rec.category] = (catStats[rec.category] || 0) + rec.amount;
+                    hasDataInView = true;
+
+                    if(rec.amount > maxExpense.amount) {
+                        maxExpense = { 
+                            item: rec.item, 
+                            amount: rec.amount, 
+                            date: `${recDate.getFullYear()}/${recDate.getMonth()+1}/${recDate.getDate()}` 
+                        };
+                    }
+
                     const dateLabel = recDate.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
                     if (dateLabel !== lastDateLabel) {
                         const header = document.createElement('div');
@@ -267,23 +359,60 @@
                 }
             });
 
-            // 繪製分類統計清單
-            if (hasMonthData) {
+            if (hasDataInView) {
                 catList.innerHTML = Object.entries(catStats)
                     .sort((a,b)=>b[1]-a[1])
-                    .map(([n,s])=>`<div class="cat-row"><span>${n}</span><span>$${s.toLocaleString()}</span></div>`)
-                    .join('');
+                    .map(([n,s])=> {
+                        const pct = ((s / viewTotal) * 100).toFixed(1);
+                        return `<div class="cat-row">
+                                  <div><span class="cat-name">${n}</span> <span class="cat-pct">${pct}%</span></div>
+                                  <span style="font-weight:bold; color:#333;">$${s.toLocaleString()}</span>
+                                </div>`
+                    }).join('');
+                
+                topExpenseBox.innerHTML = `
+                    <div class="top-expense">
+                        <div class="top-expense-title">🚨 最大筆開銷</div>
+                        <div>${maxExpense.date} - <strong>${maxExpense.item}</strong> (花費 $${maxExpense.amount.toLocaleString()})</div>
+                    </div>
+                `;
+
+                const chartLabels = Object.keys(catStats);
+                const chartData = Object.values(catStats);
+                
+                const ctx = document.getElementById('myChart').getContext('2d');
+                if (myPieChart) myPieChart.destroy(); 
+                myPieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartLabels,
+                        datasets:[{
+                            data: chartData,
+                            backgroundColor:['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e', '#e17055'],
+                            borderWidth: 2,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right' } }
+                    }
+                });
+
             } else {
-                catList.innerHTML = `<div style="color:#ccc; text-align:center;">此月份尚無記帳資料</div>`;
+                catList.innerHTML = `<div style="color:#ccc; text-align:center;">尚無記帳資料</div>`;
+                topExpenseBox.innerHTML = "";
                 list.innerHTML = `<div style="text-align:center; padding: 20px; color:#999;">沒有明細</div>`;
+                if (myPieChart) { myPieChart.destroy(); myPieChart = null; }
             }
         } else {
             catList.innerHTML = `<div style="color:#ccc; text-align:center;">尚無任何資料</div>`;
         }
 
         document.getElementById('day-total').innerText = `$${dayTotal.toLocaleString()}`;
-        document.getElementById('month-total').innerText = `$${monthTotal.toLocaleString()}`;
-        document.getElementById('sync-status').innerText = "✅ 雲端同步與分析完成";
+        document.getElementById('month-total').innerText = `$${viewTotal.toLocaleString()}`;
+        document.getElementById('sync-status').innerText = "✅ 資料同步完成";
     }
 </script>
 </body>
