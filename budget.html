@@ -25,8 +25,9 @@
         .filter-area input[type="month"] { padding: 6px 8px; border-radius: 8px; border: 1px solid #27ae60; font-size: 0.95rem; color: var(--p-color); font-weight: bold; }
         
         .view-all-btn { background: #3498db; color: white; border: none; padding: 8px 10px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(52,152,219,0.3); font-size: 0.9rem;}
-        /* 新增：匯出Excel按鈕樣式 */
         .export-btn { background: #f39c12; color: white; border: none; padding: 8px 10px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(243,156,18,0.3); font-size: 0.9rem;}
+        /* ✨ 新增：修復按鈕樣式 */
+        .fix-btn { background: #9b59b6; color: white; border: none; padding: 8px 10px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(155,89,182,0.3); font-size: 0.9rem;}
 
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -82,8 +83,9 @@
     <div class="filter-area">
         <label for="filter-month">📅</label>
         <input type="month" id="filter-month">
-        <button id="view-all-btn" class="view-all-btn">🌍 看全部</button>
+        <button id="view-all-btn" class="view-all-btn">🌍 全部</button>
         <button id="export-btn" class="export-btn">📥 匯出</button>
+        <button id="fix-old-btn" class="fix-btn">✨ 修復舊帳</button>
     </div>
 
     <div class="summary-grid">
@@ -117,8 +119,9 @@
 </div>
 
 <script type="module">
+    // ✨ 注意這裡引入了 get 和 update，用來批量修改雲端資料
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, push, set, remove, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCFcgyPnDEtcFN4rZmdMW0LT0qhKhE3XhY",
@@ -136,6 +139,7 @@
     const filterMonthInput = document.getElementById('filter-month');
     const viewAllBtn = document.getElementById('view-all-btn');
     const exportBtn = document.getElementById('export-btn'); 
+    const fixOldBtn = document.getElementById('fix-old-btn'); // 抓取修復按鈕
     
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -149,7 +153,7 @@
     let isViewAll = false; 
     let currentDisplayRecords =[]; 
 
-    // === 💡 新增：獨立的智慧分類大腦 ===
+    // === 💡 智慧分類大腦 ===
     function getCategory(item) {
         if (/(餐|吃|喝|飲|麵|飯|肉|菜|果|乳|水|全聯|超市|咖啡|早餐|午餐|晚餐|宵夜|零食|餅乾|便當)/.test(item)) return "飲食";
         if (/(車|油|捷運|公車|交通|停車|票|洗車|高鐵|台鐵|機車|計程車|uber|悠遊卡)/i.test(item)) return "交通";
@@ -161,6 +165,43 @@
         if (/(奶粉|尿布|托嬰|補習|學校|學費|安親|保母|玩具|童裝)/.test(item)) return "育兒";
         return "雜項";
     }
+
+    // === ✨ 魔法修復舊帳功能 ===
+    fixOldBtn.addEventListener('click', async () => {
+        if (!confirm("準備將過去所有分類錯誤或「已修正」的紀錄，重新用 AI 大腦掃描一次！確定要執行嗎？")) return;
+        
+        try {
+            fixOldBtn.innerText = "⏳ 修復中...";
+            const snapshot = await get(budgetRef);
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                let updatedCount = 0;
+                const updates = {}; // 準備要一起更新的資料包
+
+                // 把每一筆紀錄都拿出來檢查
+                for (const key in data) {
+                    const rec = data[key];
+                    const correctCat = getCategory(rec.item);
+                    // 如果現在的分類不對，或是之前被標了「已修正」，就加進更新名單
+                    if (rec.category !== correctCat) {
+                        updates[`${key}/category`] = correctCat;
+                        updatedCount++;
+                    }
+                }
+
+                if (updatedCount > 0) {
+                    await update(budgetRef, updates); // 一次打包送到雲端更新
+                    alert(`✨ 太棒了！成功幫妳清洗並重新分類了 ${updatedCount} 筆舊紀錄！`);
+                } else {
+                    alert("檢查完畢！妳的帳本很乾淨，沒有需要修復的舊紀錄喔。");
+                }
+            }
+        } catch (error) {
+            alert("修復失敗：" + error.message);
+        } finally {
+            fixOldBtn.innerText = "✨ 修復舊帳";
+        }
+    });
 
     // --- 語音辨識 ---
     const micBtn = document.getElementById('micBtn');
@@ -214,7 +255,6 @@
         if (!newDateStr) return;
         
         const newTime = new Date(newDateStr).setHours(12,0,0,0);
-        // 根據修改後的新名稱，重新判斷分類
         const newCategory = getCategory(newItem);
 
         set(ref(db, `budget_records/${key}`), {
@@ -225,20 +265,17 @@
         });
     };
 
-    // 當改變月份時，關閉「看全部」模式
     filterMonthInput.addEventListener('change', () => {
         isViewAll = false;
         if (globalBudgetRecords) renderData(globalBudgetRecords);
     });
 
-    // 當按下「看全部」時，開啟模式
     viewAllBtn.addEventListener('click', () => {
         isViewAll = true;
         filterMonthInput.value = ""; 
         if (globalBudgetRecords) renderData(globalBudgetRecords);
     });
 
-    // --- 匯出 Excel 的魔法 ---
     exportBtn.addEventListener('click', () => {
         if (currentDisplayRecords.length === 0) {
             alert("目前沒有資料可以匯出喔！請先確認有記帳紀錄。");
