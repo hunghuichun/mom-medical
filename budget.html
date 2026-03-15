@@ -158,11 +158,9 @@
 function getCategory(item) {
     const text = (item || "").trim();
 
-    // 1) 固定支出：每月幾乎固定會出現
-    if (/(房貸|房租|租金|水費|電費|瓦斯|天然氣|網路|電話費|手機費|管理費|保險|第四台|有線電視|訂閱|月費|Netflix|YouTube Premium|Spotify|Apple Music|學費)/i.test(text)) {
-        return "固定支出";
-    }
-
+ if (/(房貸|房租|租金|水費|電費|瓦斯|天然氣|網路|電話費|手機費|管理費|社區管理費|保險|第四台|有線電視|訂閱|訂閱費|月費|年費|續費|會員|會員費|Netflix|YouTube Premium|Spotify|Apple Music|iCloud|Google One|ChatGPT|Canva|CapCut|Disney\+|KKBOX|Hami Video|愛奇藝|LiTV|Prime Video|學費)/i.test(text)) {
+    return "固定支出";
+}
     // 2) 三餐飲食：外食、正餐、小吃
     if (/(早餐|午餐|晚餐|宵夜|便當|麵|飯|粥|火鍋|餐廳|小吃|牛肉麵|水餃|鍋貼|滷味|鹽酥雞|吃飯|用餐|餐)/.test(text)) {
         return "三餐飲食";
@@ -174,7 +172,8 @@ function getCategory(item) {
     }
 
     // 4) 食材採買：超市、市場、生鮮
-    if (/(全聯|家樂福|好市多|超市|市場|蔬菜|水果|牛奶|雞蛋|蛋|魚|肉|菜|米|食材|乳品|麵包|鮭魚|豬肉|雞胸|冷凍食品)/.test(text)) {
+    // 好市多 / Costco 如果沒有更明確品名，先預設放這類
+    if (/(全聯|家樂福|好市多|costco|大潤發|愛買|楓康|超市|市場|菜市場|生鮮|蔬菜|水果|牛奶|雞蛋|蛋|魚|肉|菜|米|食材|乳品|麵包|鮭魚|豬肉|雞胸|冷凍食品)/i.test(text)) {
         return "食材採買";
     }
 
@@ -204,7 +203,8 @@ function getCategory(item) {
     }
 
     // 10) 居家日用
-    if (/(衛生紙|洗髮精|沐浴乳|牙膏|清潔劑|垃圾袋|保鮮盒|日用品|生活用品|雜貨|五金|家具|修繕|收納|廚房用品)/.test(text)) {
+    // 拼多多如果只有平台名、沒有明確品名，先預設放這類
+    if (/(衛生紙|洗髮精|沐浴乳|牙膏|清潔劑|垃圾袋|保鮮盒|日用品|生活用品|雜貨|五金|家具|修繕|收納|廚房用品|拼多多|pinduoduo)/i.test(text)) {
         return "居家日用";
     }
 
@@ -214,7 +214,7 @@ function getCategory(item) {
     }
 
     // 12) 3C用品
-    if (/(手機|充電線|耳機|喇叭|電腦|鍵盤|滑鼠|平板|3C|配件|保護貼|包膜|行動電源)/i.test(text)) {
+    if (/(手機|充電線|耳機|喇叭|電腦|鍵盤|滑鼠|平板|3C|配件|保護貼|包膜|保護殼|手機殼|行動電源)/i.test(text)) {
         return "3C用品";
     }
 
@@ -224,7 +224,7 @@ function getCategory(item) {
     }
 
     // 14) 寵物
-    if (/(狗|貓|寵物|飼料|罐頭|美容|獸醫|尿布墊)/.test(text)) {
+    if (/(狗|貓|寵物|苦魯魯|飼料|罐頭|美容|獸醫|尿布墊)/.test(text)) {
         return "寵物";
     }
 
