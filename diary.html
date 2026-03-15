@@ -1,505 +1,605 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>緩緩慧純｜人生整理雲端日記</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>緩緩慧純｜人生整理雲端日記</title>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
-    <style>
-        :root {
-            --bg-color: #f9f7f2;
-            --card-bg: #ffffff;
-            --primary-green: #6b8e23;
-            --primary-green-dark: #58751d;
-            --soft-text: #4a4a4a;
-            --muted-text: #888;
-            --accent-blue: #e1eef6;
-            --accent-light: #f3f7ea;
-            --border-color: #e0e0e0;
-            --danger: #c53030;
-            --danger-bg: #fff5f5;
-            --danger-border: #feb2b2;
-            --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
+  <style>
+    :root {
+      --bg-color: #f9f7f2;
+      --card-bg: #ffffff;
+      --primary-green: #6b8e23;
+      --primary-green-dark: #58751d;
+      --soft-text: #4a4a4a;
+      --muted-text: #888;
+      --accent-blue: #e1eef6;
+      --accent-light: #f3f7ea;
+      --border-color: #e0e0e0;
+      --danger: #c53030;
+      --danger-bg: #fff5f5;
+      --danger-border: #feb2b2;
+      --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      --paper-width: 820px;
+    }
 
-        * { box-sizing: border-box; }
+    * { box-sizing: border-box; }
 
-        body {
-            font-family: "Microsoft JhengHei", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--soft-text);
-            line-height: 1.8;
-            margin: 0;
-            padding: 20px;
-            font-size: 18px;
-        }
+    body {
+      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--soft-text);
+      line-height: 1.9;
+      margin: 0;
+      padding: 20px;
+      font-size: 18px;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+    }
 
-        header {
-            text-align: center;
-            margin-bottom: 24px;
-            border-bottom: 2px solid var(--primary-green);
-            padding-bottom: 15px;
-        }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--primary-green);
+      padding-bottom: 15px;
+    }
 
-        h1 {
-            color: var(--primary-green);
-            margin-bottom: 5px;
-        }
+    h1 {
+      color: var(--primary-green);
+      margin-bottom: 5px;
+    }
 
-        .subtitle {
-            color: var(--muted-text);
-        }
+    .subtitle {
+      color: var(--muted-text);
+    }
 
-        nav {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
 
-        nav button, nav a {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            text-decoration: none;
-            color: var(--soft-text);
-            transition: 0.2s ease;
-        }
+    nav button, nav a {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      text-decoration: none;
+      color: var(--soft-text);
+      transition: 0.2s ease;
+    }
 
-        nav button:hover, nav a:hover {
-            transform: translateY(-1px);
-        }
+    nav button:hover, nav a:hover,
+    .btn-main:hover, .btn-sub:hover,
+    .mini-btn:hover, .tag-check:hover, .tag-filter-btn:hover {
+      transform: translateY(-1px);
+    }
 
-        nav button.active {
-            background: var(--primary-green);
-            color: white;
-            border-color: var(--primary-green);
-        }
+    nav button.active {
+      background: var(--primary-green);
+      color: white;
+      border-color: var(--primary-green);
+    }
 
-        .medical-back {
-            background: var(--danger-bg) !important;
-            border-color: var(--danger-border) !important;
-            color: var(--danger) !important;
-            font-weight: bold;
-        }
+    .medical-back {
+      background: var(--danger-bg) !important;
+      border-color: var(--danger-border) !important;
+      color: var(--danger) !important;
+      font-weight: bold;
+    }
 
-        .card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: var(--shadow);
-            margin-bottom: 20px;
-        }
+    .card {
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    .form-group { margin-bottom: 20px; }
 
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: var(--primary-green);
-        }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: var(--primary-green);
+    }
 
-        .helper-text {
-            color: var(--muted-text);
-            font-size: 14px;
-            margin-top: -2px;
-            margin-bottom: 10px;
-        }
+    .helper-text {
+      color: var(--muted-text);
+      font-size: 14px;
+      margin-top: -2px;
+      margin-bottom: 10px;
+    }
 
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 18px;
-            box-sizing: border-box;
-            font-family: inherit;
-            background: white;
-        }
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 18px;
+      box-sizing: border-box;
+      font-family: inherit;
+      background: white;
+      color: var(--soft-text);
+    }
 
-        textarea {
-            height: 220px;
-            resize: vertical;
-        }
+    textarea {
+      min-height: 360px;
+      resize: vertical;
+      line-height: 1.9;
+    }
 
-        .option-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
+    .template-box {
+      background: #fbfcf8;
+      border: 1px dashed #c9d8a7;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      color: #60703a;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
 
-        .tag-check {
-            background: #f0f0f0;
-            padding: 6px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 15px;
-            user-select: none;
-            transition: 0.2s ease;
-        }
+    .option-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
 
-        .tag-check:hover {
-            transform: translateY(-1px);
-        }
+    .tag-check {
+      background: #f0f0f0;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 15px;
+      user-select: none;
+      transition: 0.2s ease;
+    }
 
-        .tag-check.selected {
-            background: var(--primary-green);
-            color: white;
-        }
+    .tag-check.selected {
+      background: var(--primary-green);
+      color: white;
+    }
 
-        .btn-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-        .btn-main,
-        .btn-sub {
-            padding: 14px 18px;
-            border: none;
-            border-radius: 35px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
+    .btn-main, .btn-sub {
+      padding: 14px 18px;
+      border: none;
+      border-radius: 35px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
 
-        .btn-main {
-            background: var(--primary-green);
-            color: white;
-            flex: 1;
-            min-width: 180px;
-        }
+    .btn-main {
+      background: var(--primary-green);
+      color: white;
+      flex: 1;
+      min-width: 180px;
+    }
 
-        .btn-main:hover {
-            background: var(--primary-green-dark);
-        }
+    .btn-main:hover { background: var(--primary-green-dark); }
 
-        .btn-sub {
-            background: #f0f0f0;
-            color: var(--soft-text);
-        }
+    .btn-sub {
+      background: #f0f0f0;
+      color: var(--soft-text);
+    }
 
-        .btn-sub:hover,
-        .btn-main:hover {
-            transform: translateY(-1px);
-        }
+    .hidden { display: none !important; }
 
-        .hidden {
-            display: none;
-        }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 18px;
-        }
+    .stat-box {
+      background: var(--accent-light);
+      border: 1px solid #dce8c8;
+      border-radius: 14px;
+      padding: 14px;
+    }
 
-        .stat-box {
-            background: var(--accent-light);
-            border: 1px solid #dce8c8;
-            border-radius: 14px;
-            padding: 14px;
-        }
+    .stat-title {
+      color: var(--muted-text);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
 
-        .stat-title {
-            color: var(--muted-text);
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
+    .stat-value {
+      color: var(--primary-green-dark);
+      font-size: 22px;
+      font-weight: bold;
+    }
 
-        .stat-value {
-            color: var(--primary-green-dark);
-            font-size: 22px;
-            font-weight: bold;
-        }
+    .tool-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 15px;
+    }
 
-        .tool-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+    .tool-row input {
+      flex: 1;
+      min-width: 240px;
+    }
 
-        .tool-row input {
-            flex: 1;
-            min-width: 240px;
-        }
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 0;
+    }
 
-        .filter-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 10px 0 0;
-        }
+    .tag-filter-btn,
+    .tag-pill {
+      display: inline-block;
+      background: var(--accent-blue);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      margin-right: 5px;
+      margin-top: 5px;
+      color: #35556d;
+    }
 
-        .tag-filter-btn,
-        .tag-pill {
-            display: inline-block;
-            background: var(--accent-blue);
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 14px;
-            margin-right: 5px;
-            margin-top: 5px;
-            color: #35556d;
-        }
+    .tag-filter-btn {
+      border: none;
+      cursor: pointer;
+    }
 
-        .tag-filter-btn {
-            border: none;
-            cursor: pointer;
-        }
+    .tag-filter-btn.active {
+      background: var(--primary-green);
+      color: white;
+    }
 
-        .tag-filter-btn.active {
-            background: var(--primary-green);
-            color: white;
-        }
+    .diary-item {
+      margin-bottom: 24px;
+      background: #fff;
+      padding: 28px;
+      border-radius: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      border: 1px solid #eef1e7;
+      position: relative;
+    }
 
-        .diary-item {
-            border-left: 6px solid var(--primary-green);
-            margin-bottom: 18px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 0 15px 15px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
+    .diary-item::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 22px;
+      bottom: 22px;
+      width: 6px;
+      border-radius: 0 999px 999px 0;
+      background: var(--primary-green);
+    }
 
-        .diary-meta {
-            font-size: 0.85em;
-            color: var(--muted-text);
-            margin-bottom: 6px;
-        }
+    .diary-paper {
+      max-width: var(--paper-width);
+      margin: 0 auto;
+      padding-left: 8px;
+    }
 
-        .diary-title {
-            font-weight: bold;
-            color: var(--primary-green);
-            font-size: 1.08em;
-            margin-bottom: 8px;
-        }
+    .diary-meta {
+      font-size: 0.9em;
+      color: var(--muted-text);
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
 
-        .diary-content {
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
+    .diary-main-title {
+      color: var(--primary-green-dark);
+      font-size: 1.5em;
+      font-weight: 700;
+      margin: 2px 0 2px;
+    }
 
-        .diary-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 14px;
-        }
+    .diary-subtitle {
+      font-size: 1.02em;
+      color: #6d7f42;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #edf1e5;
+    }
 
-        .mini-btn {
-            background: #f4f4f4;
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 999px;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--soft-text);
-        }
+    .diary-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 1em;
+    }
 
-        .mini-btn:hover {
-            transform: translateY(-1px);
-        }
+    .diary-section-title {
+      color: var(--primary-green);
+      font-weight: 700;
+      margin-top: 18px;
+      margin-bottom: 6px;
+      font-size: 1.03em;
+    }
 
-        .empty-hint {
-            text-align: center;
-            color: #999;
-            padding: 40px;
-            font-style: italic;
-        }
+    .diary-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 10px;
+      border-top: 1px dashed #e8ebdf;
+    }
 
-        .status-bar {
-            margin-bottom: 14px;
-            font-size: 15px;
-            color: var(--muted-text);
-        }
+    .mini-btn {
+      background: #f4f4f4;
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--soft-text);
+    }
 
-        .editing-banner {
-            background: #fff9db;
-            color: #8a6d1d;
-            border: 1px solid #f7e7a2;
-            padding: 12px 14px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-        }
+    .empty-hint {
+      text-align: center;
+      color: #999;
+      padding: 40px;
+      font-style: italic;
+    }
 
-        @media print {
-            nav,
-            .tool-row,
-            .filter-tags,
-            .status-bar,
-            .diary-actions,
-            .btn-row,
-            .editing-banner {
-                display: none !important;
-            }
+    .status-bar {
+      margin-bottom: 14px;
+      font-size: 15px;
+      color: var(--muted-text);
+    }
 
-            body {
-                background: white;
-                padding: 0;
-                color: black;
-            }
+    .editing-banner {
+      background: #fff9db;
+      color: #8a6d1d;
+      border: 1px solid #f7e7a2;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
 
-            .card,
-            .diary-item {
-                box-shadow: none;
-                border: none;
-                background: white;
-            }
-        }
+    .print-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
 
-        @media (max-width: 768px) {
-            body {
-                font-size: 16px;
-                padding: 14px;
-            }
+    .print-note {
+      color: var(--muted-text);
+      font-size: 14px;
+      margin-top: 6px;
+    }
 
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+    @media print {
+      @page {
+        size: A4;
+        margin: 2.2cm 2cm;
+      }
 
-            .btn-row {
-                flex-direction: column;
-            }
+      body {
+        background: white;
+        padding: 0;
+        color: #222;
+        font-size: 12pt;
+        line-height: 1.9;
+      }
 
-            .btn-main, .btn-sub {
-                width: 100%;
-            }
-        }
-    </style>
+      header,
+      nav,
+      .tool-row,
+      .filter-tags,
+      .status-bar,
+      .diary-actions,
+      .btn-row,
+      .editing-banner,
+      .print-note,
+      #page-write {
+        display: none !important;
+      }
+
+      #page-list {
+        display: block !important;
+      }
+
+      .card,
+      .diary-item {
+        box-shadow: none;
+        border: none;
+        background: white;
+        border-radius: 0;
+      }
+
+      .card {
+        padding: 0;
+      }
+
+      .diary-item {
+        padding: 0;
+        margin: 0 0 20mm 0;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .diary-item.print-page-break {
+        break-before: page;
+        page-break-before: always;
+      }
+
+      .diary-item::before {
+        display: none;
+      }
+
+      .diary-paper {
+        max-width: none;
+        padding-left: 0;
+      }
+
+      .diary-meta {
+        font-size: 10.5pt;
+        color: #666;
+      }
+
+      .diary-main-title {
+        font-size: 19pt;
+        color: #2f3c17;
+        margin-top: 0;
+      }
+
+      .diary-subtitle {
+        font-size: 12.5pt;
+        color: #52643a;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 18pt;
+      }
+
+      .diary-content {
+        font-size: 11.5pt;
+        line-height: 2;
+      }
+
+      .tag-pill {
+        background: none;
+        color: #666;
+        border: 1px solid #ddd;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        font-size: 16px;
+        padding: 14px;
+      }
+
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .btn-row { flex-direction: column; }
+      .btn-main, .btn-sub { width: 100%; }
+      textarea { min-height: 300px; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
+  <div class="container">
     <header>
-        <h1>緩緩慧純</h1>
-        <div class="subtitle">人生整理師・雲端日記寶盒</div>
+      <h1>緩緩慧純</h1>
+      <div class="subtitle">人生整理師・雲端日記寶盒</div>
     </header>
 
     <nav>
-        <button onclick="showPage('write')" id="nav-write" class="active">✍️ 寫日記</button>
-        <button onclick="showPage('list')" id="nav-list">📚 找回顧</button>
-        <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
+      <button onclick="showPage('write')" id="nav-write" class="active">✍️ 貼上日記</button>
+      <button onclick="showPage('list')" id="nav-list">📚 回顧與列印</button>
+      <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
     </nav>
 
     <div id="page-write" class="card">
-        <div id="editing-banner" class="editing-banner hidden">
-            妳正在編輯一篇已存在的日記，修改後按「更新這篇日記」
-        </div>
+      <div id="editing-banner" class="editing-banner hidden">
+        妳正在編輯一篇已存在的日記，修改後按「更新這篇日記」
+      </div>
 
-        <div class="form-group">
-            <label for="diary-date">日期</label>
-            <input type="date" id="diary-date" />
-        </div>
+      <div class="form-group">
+        <label for="raw-diary">整篇日記貼上區</label>
+        <div class="helper-text">只要整篇貼上就好，系統會自動拆成日期、主旨、內容和標籤。最穩的格式是保留這四段：日期、今日主旨、日記內容、今日標籤。</div>
+        <textarea id="raw-diary" placeholder="例如：
+2026年3月15日 星期日
 
-        <div class="form-group">
-            <label for="diary-title">今日標題</label>
-            <input type="text" id="diary-title" placeholder="今天有什麼珍珠值得收藏？" />
-        </div>
+今日主旨：平穩整理的一天
 
-        <div class="form-group">
-            <label for="diary-content">日記內容</label>
-            <textarea id="diary-content" placeholder="給生活的一點反思..."></textarea>
-        </div>
+日記內容：
+今天早上六點多起床……
 
-        <div class="form-group">
-            <label>這篇沾到哪些主題</label>
-            <div class="helper-text">可不選，不用勉強分類，只要點一兩個妳覺得最接近的就好</div>
-            <div class="option-group" id="tag-options">
-                <span class="tag-check" data-tag="日常">日常</span>
-                <span class="tag-check" data-tag="靈感">靈感</span>
-                <span class="tag-check" data-tag="心情">心情</span>
-                <span class="tag-check" data-tag="家人">家人</span>
-                <span class="tag-check" data-tag="女兒">女兒</span>
-                <span class="tag-check" data-tag="運動">運動</span>
-                <span class="tag-check" data-tag="健康">健康</span>
-                <span class="tag-check" data-tag="頻道">頻道</span>
-                <span class="tag-check" data-tag="AI">AI</span>
-                <span class="tag-check" data-tag="理財">理財</span>
-                <span class="tag-check" data-tag="回憶">回憶</span>
-                <span class="tag-check" data-tag="重要">重要</span>
-            </div>
-        </div>
+今日標籤：#日常 #運動 #理財"></textarea>
+        <div class="template-box">建議格式
+2026年3月15日 星期日
 
-        <div class="btn-row">
-            <button class="btn-main" id="save-btn" onclick="saveOrUpdateDiary()">同步到雲端</button>
-            <button class="btn-sub hidden" id="cancel-edit-btn" onclick="cancelEdit()">取消編輯</button>
-        </div>
+今日主旨：平穩整理的一天
+
+日記內容：
+今天早上六點多起床……
+……
+
+今日標籤：#日常 #運動 #健康</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-main" id="save-btn" onclick="saveOrUpdateDiary()">自動解析並同步到雲端</button>
+        <button class="btn-sub hidden" id="cancel-edit-btn" onclick="cancelEdit()">取消編輯</button>
+      </div>
     </div>
 
     <div id="page-list" class="hidden">
-        <div class="card">
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-title">總篇數</div>
-                    <div class="stat-value" id="stat-total">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-title">本月紀錄</div>
-                    <div class="stat-value" id="stat-month">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-title">常用小記號</div>
-                    <div class="stat-value" id="stat-top-tag">—</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-title">最近紀錄</div>
-                    <div class="stat-value" id="stat-latest">—</div>
-                </div>
-            </div>
-
-            <div class="tool-row">
-                <input type="text" id="search-input" placeholder="搜尋標題、內容、標籤..." oninput="renderList()" />
-                <button class="btn-sub" onclick="clearSearch()">清除搜尋</button>
-                <button class="btn-sub" onclick="window.print()">列印目前頁面</button>
-            </div>
-
-            <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
-
-            <div class="filter-tags" id="filter-tags"></div>
-
-            <div id="diary-container" style="margin-top: 20px;"></div>
+      <div class="card">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-title">總篇數</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-title">本月紀錄</div>
+            <div class="stat-value" id="stat-month">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-title">常用標籤</div>
+            <div class="stat-value" id="stat-top-tag">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-title">最近紀錄</div>
+            <div class="stat-value" id="stat-latest">—</div>
+          </div>
         </div>
-    </div>
-</div>
 
-<script>
+        <div class="tool-row">
+          <input type="text" id="search-input" placeholder="搜尋標題、主旨、內容、標籤..." oninput="renderList()" />
+          <button class="btn-sub" onclick="clearSearch()">清除搜尋</button>
+        </div>
+
+        <div class="print-toolbar">
+          <button class="btn-sub" onclick="printCurrentView()">列印目前篩選結果</button>
+          <button class="btn-sub" onclick="printAllDiaries()">列印全部日記</button>
+        </div>
+        <div class="print-note">列印時會自動切成較像書頁的版面，輸入區和按鈕不會印出來。</div>
+
+        <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
+        <div class="filter-tags" id="filter-tags"></div>
+        <div id="diary-container" style="margin-top: 20px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
     const firebaseConfig = {
-        apiKey: "AIzaSyCxcA5bAPDqW5O4CaEqksyai-rU5EpvB-Y",
-        authDomain: "my-diary-23345.firebaseapp.com",
-        databaseURL: "https://my-diary-23345-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "my-diary-23345",
-        storageBucket: "my-diary-23345.firebasestorage.app",
-        messagingSenderId: "442549444199",
-        appId: "1:442549444199:web:a14c1ffad4861bff0d3ec2"
+      apiKey: "AIzaSyCxcA5bAPDqW5O4CaEqksyai-rU5EpvB-Y",
+      authDomain: "my-diary-23345.firebaseapp.com",
+      databaseURL: "https://my-diary-23345-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "my-diary-23345",
+      storageBucket: "my-diary-23345.firebasestorage.app",
+      messagingSenderId: "442549444199",
+      appId: "1:442549444199:web:a14c1ffad4861bff0d3ec2"
     };
 
     if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(firebaseConfig);
     }
 
     const db = firebase.database().ref("diaries");
 
-    const diaryDate = document.getElementById("diary-date");
-    const diaryTitle = document.getElementById("diary-title");
-    const diaryContent = document.getElementById("diary-content");
+    const rawDiaryEl = document.getElementById("raw-diary");
     const searchInput = document.getElementById("search-input");
     const diaryContainer = document.getElementById("diary-container");
     const statusBar = document.getElementById("status-bar");
@@ -508,330 +608,400 @@
     const cancelEditBtn = document.getElementById("cancel-edit-btn");
     const filterTagsWrap = document.getElementById("filter-tags");
 
-    diaryDate.valueAsDate = new Date();
-
     let allDiaries = [];
     let currentEditId = null;
     let activeTagFilter = "";
-
-    document.querySelectorAll(".tag-check").forEach(tagEl => {
-        tagEl.addEventListener("click", () => {
-            tagEl.classList.toggle("selected");
-        });
-    });
+    let printModeAll = false;
 
     db.on(
-        "value",
-        (snapshot) => {
-            const data = snapshot.val() || {};
+      "value",
+      (snapshot) => {
+        const data = snapshot.val() || {};
 
-            allDiaries = Object.keys(data).map(id => ({
-                id,
-                ...data[id]
-            }));
+        allDiaries = Object.keys(data).map(id => ({ id, ...normalizeDiary(data[id]) }));
+        allDiaries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-            allDiaries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-            renderStats();
-            renderTagFilters();
-            renderList();
-        },
-        (error) => {
-            diaryContainer.innerHTML = "";
-            const hint = document.createElement("div");
-            hint.className = "empty-hint";
-            hint.textContent = "讀取雲端資料失敗：" + error.message;
-            diaryContainer.appendChild(hint);
-            statusBar.textContent = "讀取失敗";
-        }
+        renderStats();
+        renderTagFilters();
+        renderList();
+      },
+      (error) => {
+        diaryContainer.innerHTML = "";
+        const hint = document.createElement("div");
+        hint.className = "empty-hint";
+        hint.textContent = "讀取雲端資料失敗：" + error.message;
+        diaryContainer.appendChild(hint);
+        statusBar.textContent = "讀取失敗";
+      }
     );
 
-    function getSelectedTags() {
-        return Array.from(document.querySelectorAll(".tag-check.selected")).map(el => el.dataset.tag);
+    function normalizeDiary(d) {
+      const rawText = d.rawText || buildRawTextFromStructured(d);
+      const parsed = parseDiaryText(rawText);
+      return {
+        ...d,
+        rawText,
+        date: d.date || parsed.date,
+        title: d.title || parsed.title,
+        content: d.content || parsed.content,
+        tags: Array.isArray(d.tags) ? d.tags : parsed.tags,
+        weekdayText: d.weekdayText || parsed.weekdayText || "",
+        displayDate: d.displayDate || parsed.displayDate || d.date || ""
+      };
     }
 
-    function setSelectedTags(tags = []) {
-        document.querySelectorAll(".tag-check").forEach(el => {
-            el.classList.toggle("selected", tags.includes(el.dataset.tag));
-        });
+    function buildRawTextFromStructured(d) {
+      const tagsLine = (d.tags || []).map(tag => `#${tag}`).join(" ");
+      const displayDate = d.displayDate || d.date || "";
+      return `${displayDate}\n\n今日主旨：${d.title || ""}\n\n日記內容：\n${d.content || ""}\n\n今日標籤：${tagsLine}`.trim();
+    }
+
+    function parseDiaryText(rawText) {
+      const text = (rawText || "").replace(/\r\n/g, "\n").trim();
+      const lines = text.split("\n").map(line => line.trimRight());
+      const firstNonEmpty = lines.find(line => line.trim());
+
+      const dateInfo = extractDateInfo(firstNonEmpty || "");
+      const displayDate = firstNonEmpty || dateInfo.displayDate || "";
+
+      const title = extractLabeledBlock(text, ["今日主旨", "主旨", "標題"]) || inferTitle(text);
+      const content = extractContentBlock(text);
+      const tags = extractTags(text);
+
+      return {
+        date: dateInfo.isoDate || "",
+        weekdayText: dateInfo.weekdayText || "",
+        displayDate,
+        title: title || "未命名的一天",
+        content: content || text,
+        tags
+      };
+    }
+
+    function extractDateInfo(line) {
+      if (!line) return {};
+      const match = line.match(/(\d{4})[年\/-](\d{1,2})[月\/-](\d{1,2})/);
+      if (!match) return {};
+      const y = match[1];
+      const m = String(match[2]).padStart(2, "0");
+      const d = String(match[3]).padStart(2, "0");
+      const weekdayMatch = line.match(/星期[一二三四五六日天]|週[一二三四五六日天]/);
+      return {
+        isoDate: `${y}-${m}-${d}`,
+        weekdayText: weekdayMatch ? weekdayMatch[0] : "",
+        displayDate: line.trim()
+      };
+    }
+
+    function extractLabeledBlock(text, labels) {
+      for (const label of labels) {
+        const regex = new RegExp(`${label}\\s*[：:]\\s*([\\s\\S]*?)(?=\\n\\s*(?:日記內容|內容|今日標籤|標籤)\\s*[：:]|$)`);
+        const match = text.match(regex);
+        if (match && match[1].trim()) return match[1].trim();
+      }
+      return "";
+    }
+
+    function extractContentBlock(text) {
+      const regex = /(日記內容|內容)\s*[：:]\s*([\s\S]*?)(?=\n\s*(?:今日標籤|標籤)\s*[：:]|$)/;
+      const match = text.match(regex);
+      if (match && match[2].trim()) return match[2].trim();
+
+      const cleaned = text
+        .replace(/^.*?(?:今日主旨|主旨|標題)\s*[：:].*$/m, "")
+        .replace(/^.*?(?:今日標籤|標籤)\s*[：:].*$/m, "")
+        .trim();
+      return cleaned;
+    }
+
+    function extractTags(text) {
+      const explicitLine = text.match(/(?:今日標籤|標籤)\s*[：:]\s*(.*)/);
+      const tagText = explicitLine ? explicitLine[1] : text;
+      const matches = tagText.match(/#([\u4e00-\u9fa5A-Za-z0-9_]+)/g) || [];
+      return [...new Set(matches.map(t => t.replace(/^#/, "")))];
+    }
+
+    function inferTitle(text) {
+      const withoutLabels = text
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line && !/^(\d{4}[年\/-]\d{1,2}[月\/-]\d{1,2}|今日主旨|主旨|標題|日記內容|內容|今日標籤|標籤)/.test(line));
+      const firstSentence = withoutLabels[0] || "";
+      return firstSentence.slice(0, 24) || "未命名的一天";
     }
 
     function saveOrUpdateDiary() {
-        const title = diaryTitle.value.trim();
-        const content = diaryContent.value.trim();
-        const date = diaryDate.value;
-        const tags = getSelectedTags();
+      const rawText = rawDiaryEl.value.trim();
+      if (!rawText) {
+        alert("請先貼上整篇日記喔");
+        return;
+      }
 
-        if (!content) {
-            alert("請寫下一點今天的感悟喔！");
-            return;
-        }
+      const parsed = parseDiaryText(rawText);
+      const payload = {
+        rawText,
+        date: parsed.date,
+        displayDate: parsed.displayDate,
+        weekdayText: parsed.weekdayText,
+        title: parsed.title,
+        content: parsed.content,
+        tags: parsed.tags,
+        timestamp: currentEditId ? getOriginalTimestamp(currentEditId) : Date.now(),
+        updatedAt: Date.now()
+      };
 
-        if (!date) {
-            alert("請確認日期。");
-            return;
-        }
-
-        const payload = {
-            title,
-            content,
-            date,
-            tags,
-            timestamp: currentEditId ? getOriginalTimestamp(currentEditId) : Date.now(),
-            updatedAt: Date.now()
-        };
-
-        if (currentEditId) {
-            db.child(currentEditId).update(payload)
-                .then(() => {
-                    alert("這篇日記已更新完成");
-                    cancelEdit();
-                    showPage("list");
-                })
-                .catch((error) => {
-                    alert("更新失敗：" + error.message);
-                });
-        } else {
-            db.push(payload)
-                .then(() => {
-                    alert("珍珠已同步至雲端！");
-                    resetForm();
-                    showPage("list");
-                })
-                .catch((error) => {
-                    alert("同步失敗：" + error.message);
-                });
-        }
+      if (currentEditId) {
+        db.child(currentEditId).update(payload)
+          .then(() => {
+            alert("這篇日記已更新完成");
+            cancelEdit();
+            showPage("list");
+          })
+          .catch((error) => {
+            alert("更新失敗：" + error.message);
+          });
+      } else {
+        db.push(payload)
+          .then(() => {
+            alert("珍珠已同步至雲端！");
+            resetForm();
+            showPage("list");
+          })
+          .catch((error) => {
+            alert("同步失敗：" + error.message);
+          });
+      }
     }
 
     function getOriginalTimestamp(id) {
-        const target = allDiaries.find(d => d.id === id);
-        return target?.timestamp || Date.now();
+      const target = allDiaries.find(d => d.id === id);
+      return target?.timestamp || Date.now();
     }
 
     function editDiary(id) {
-        const diary = allDiaries.find(d => d.id === id);
-        if (!diary) return;
+      const diary = allDiaries.find(d => d.id === id);
+      if (!diary) return;
 
-        currentEditId = id;
-        diaryDate.value = diary.date || "";
-        diaryTitle.value = diary.title || "";
-        diaryContent.value = diary.content || "";
-        setSelectedTags(diary.tags || []);
+      currentEditId = id;
+      rawDiaryEl.value = diary.rawText || buildRawTextFromStructured(diary);
 
-        editingBanner.classList.remove("hidden");
-        cancelEditBtn.classList.remove("hidden");
-        saveBtn.textContent = "更新這篇日記";
+      editingBanner.classList.remove("hidden");
+      cancelEditBtn.classList.remove("hidden");
+      saveBtn.textContent = "更新這篇日記";
 
-        showPage("write");
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      showPage("write");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function cancelEdit() {
-        currentEditId = null;
-        resetForm();
-        editingBanner.classList.add("hidden");
-        cancelEditBtn.classList.add("hidden");
-        saveBtn.textContent = "同步到雲端";
-    }
-
-    function renderStats() {
-        document.getElementById("stat-total").textContent = allDiaries.length;
-
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-
-        const monthCount = allDiaries.filter(d => {
-            if (!d.date) return false;
-            const dt = new Date(d.date);
-            return dt.getFullYear() === year && dt.getMonth() === month;
-        }).length;
-        document.getElementById("stat-month").textContent = monthCount;
-
-        const tagCounter = {};
-        allDiaries.forEach(d => {
-            (d.tags || []).forEach(tag => {
-                tagCounter[tag] = (tagCounter[tag] || 0) + 1;
-            });
-        });
-
-        let topTag = "—";
-        let topCount = 0;
-        for (const tag in tagCounter) {
-            if (tagCounter[tag] > topCount) {
-                topCount = tagCounter[tag];
-                topTag = tag;
-            }
-        }
-        document.getElementById("stat-top-tag").textContent = topTag;
-
-        document.getElementById("stat-latest").textContent = allDiaries[0]?.date || "—";
-    }
-
-    function renderTagFilters() {
-        filterTagsWrap.innerHTML = "";
-
-        const tagCounter = {};
-        allDiaries.forEach(d => {
-            (d.tags || []).forEach(tag => {
-                tagCounter[tag] = (tagCounter[tag] || 0) + 1;
-            });
-        });
-
-        const allBtn = document.createElement("button");
-        allBtn.className = "tag-filter-btn" + (activeTagFilter === "" ? " active" : "");
-        allBtn.textContent = "全部";
-        allBtn.onclick = () => {
-            activeTagFilter = "";
-            renderTagFilters();
-            renderList();
-        };
-        filterTagsWrap.appendChild(allBtn);
-
-        Object.keys(tagCounter)
-            .sort((a, b) => tagCounter[b] - tagCounter[a])
-            .forEach(tag => {
-                const btn = document.createElement("button");
-                btn.className = "tag-filter-btn" + (activeTagFilter === tag ? " active" : "");
-                btn.textContent = `${tag} (${tagCounter[tag]})`;
-                btn.onclick = () => {
-                    activeTagFilter = tag;
-                    renderTagFilters();
-                    renderList();
-                };
-                filterTagsWrap.appendChild(btn);
-            });
-    }
-
-    function clearSearch() {
-        searchInput.value = "";
-        activeTagFilter = "";
-        renderTagFilters();
-        renderList();
-    }
-
-    function renderList() {
-        const search = (searchInput.value || "").trim().toLowerCase();
-        diaryContainer.innerHTML = "";
-
-        const filtered = allDiaries.filter(d => {
-            const title = (d.title || "").toLowerCase();
-            const content = (d.content || "").toLowerCase();
-            const tagText = (d.tags || []).join(" ").toLowerCase();
-
-            const matchSearch =
-                title.includes(search) ||
-                content.includes(search) ||
-                tagText.includes(search);
-
-            const matchTag =
-                !activeTagFilter || (d.tags || []).includes(activeTagFilter);
-
-            return matchSearch && matchTag;
-        });
-
-        statusBar.textContent = activeTagFilter
-            ? `目前顯示 ${filtered.length} 篇，小記號篩選：${activeTagFilter}`
-            : `目前顯示 ${filtered.length} 篇`;
-
-        if (filtered.length === 0) {
-            const hint = document.createElement("div");
-            hint.className = "empty-hint";
-            hint.textContent = search || activeTagFilter
-                ? "找不到相關的珍珠..."
-                : "還沒有任何紀錄，開始寫下第一筆吧！";
-            diaryContainer.appendChild(hint);
-            return;
-        }
-
-        filtered.forEach(d => {
-            const div = document.createElement("div");
-            div.className = "diary-item";
-
-            const metaEl = document.createElement("div");
-            metaEl.className = "diary-meta";
-            metaEl.textContent = `📅 ${d.date || "未知日期"}　·　已同步`;
-
-            const titleEl = document.createElement("div");
-            titleEl.className = "diary-title";
-            titleEl.textContent = d.title || "無標題";
-
-            const contentEl = document.createElement("div");
-            contentEl.className = "diary-content";
-
-            const fullText = d.content || "";
-            const isLong = fullText.length > 160;
-            let expanded = false;
-
-            function updateContent() {
-                contentEl.textContent = expanded || !isLong
-                    ? fullText
-                    : fullText.slice(0, 160) + "...";
-            }
-            updateContent();
-
-            const tagsWrap = document.createElement("div");
-            tagsWrap.style.marginTop = "10px";
-            (d.tags || []).forEach(tag => {
-                const tagEl = document.createElement("button");
-                tagEl.className = "tag-pill";
-                tagEl.textContent = `#${tag}`;
-                tagEl.style.border = "none";
-                tagEl.style.cursor = "pointer";
-                tagEl.onclick = () => {
-                    activeTagFilter = tag;
-                    renderTagFilters();
-                    renderList();
-                };
-                tagsWrap.appendChild(tagEl);
-            });
-
-            const actionsEl = document.createElement("div");
-            actionsEl.className = "diary-actions";
-
-            if (isLong) {
-                const toggleBtn = document.createElement("button");
-                toggleBtn.className = "mini-btn";
-                toggleBtn.textContent = "展開全文";
-                toggleBtn.onclick = () => {
-                    expanded = !expanded;
-                    toggleBtn.textContent = expanded ? "收合" : "展開全文";
-                    updateContent();
-                };
-                actionsEl.appendChild(toggleBtn);
-            }
-
-            const editBtn = document.createElement("button");
-            editBtn.className = "mini-btn";
-            editBtn.textContent = "編輯";
-            editBtn.onclick = () => editDiary(d.id);
-
-            actionsEl.appendChild(editBtn);
-
-            div.appendChild(metaEl);
-            div.appendChild(titleEl);
-            div.appendChild(contentEl);
-            div.appendChild(tagsWrap);
-            div.appendChild(actionsEl);
-
-            diaryContainer.appendChild(div);
-        });
-    }
-
-    function showPage(page) {
-        document.getElementById("page-write").classList.toggle("hidden", page !== "write");
-        document.getElementById("page-list").classList.toggle("hidden", page !== "list");
-        document.getElementById("nav-write").classList.toggle("active", page === "write");
-        document.getElementById("nav-list").classList.toggle("active", page === "list");
+      currentEditId = null;
+      resetForm();
+      editingBanner.classList.add("hidden");
+      cancelEditBtn.classList.add("hidden");
+      saveBtn.textContent = "自動解析並同步到雲端";
     }
 
     function resetForm() {
-        diaryTitle.value = "";
-        diaryContent.value = "";
-        diaryDate.valueAsDate = new Date();
-        setSelectedTags([]);
+      rawDiaryEl.value = "";
     }
-</script>
+
+    function renderStats() {
+      document.getElementById("stat-total").textContent = allDiaries.length;
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const monthCount = allDiaries.filter(d => {
+        if (!d.date) return false;
+        const dt = new Date(d.date);
+        return dt.getFullYear() === year && dt.getMonth() === month;
+      }).length;
+      document.getElementById("stat-month").textContent = monthCount;
+
+      const tagCounter = {};
+      allDiaries.forEach(d => {
+        (d.tags || []).forEach(tag => { tagCounter[tag] = (tagCounter[tag] || 0) + 1; });
+      });
+
+      let topTag = "—";
+      let topCount = 0;
+      for (const tag in tagCounter) {
+        if (tagCounter[tag] > topCount) {
+          topCount = tagCounter[tag];
+          topTag = tag;
+        }
+      }
+      document.getElementById("stat-top-tag").textContent = topTag;
+      document.getElementById("stat-latest").textContent = allDiaries[0]?.date || "—";
+    }
+
+    function renderTagFilters() {
+      filterTagsWrap.innerHTML = "";
+
+      const tagCounter = {};
+      allDiaries.forEach(d => {
+        (d.tags || []).forEach(tag => { tagCounter[tag] = (tagCounter[tag] || 0) + 1; });
+      });
+
+      const allBtn = document.createElement("button");
+      allBtn.className = "tag-filter-btn" + (activeTagFilter === "" ? " active" : "");
+      allBtn.textContent = "全部";
+      allBtn.onclick = () => {
+        activeTagFilter = "";
+        renderTagFilters();
+        renderList();
+      };
+      filterTagsWrap.appendChild(allBtn);
+
+      Object.keys(tagCounter)
+        .sort((a, b) => tagCounter[b] - tagCounter[a])
+        .forEach(tag => {
+          const btn = document.createElement("button");
+          btn.className = "tag-filter-btn" + (activeTagFilter === tag ? " active" : "");
+          btn.textContent = `${tag} (${tagCounter[tag]})`;
+          btn.onclick = () => {
+            activeTagFilter = tag;
+            renderTagFilters();
+            renderList();
+          };
+          filterTagsWrap.appendChild(btn);
+        });
+    }
+
+    function clearSearch() {
+      searchInput.value = "";
+      activeTagFilter = "";
+      renderTagFilters();
+      renderList();
+    }
+
+    function getFilteredDiaries() {
+      const search = (searchInput.value || "").trim().toLowerCase();
+      return allDiaries.filter(d => {
+        const title = (d.title || "").toLowerCase();
+        const content = (d.content || "").toLowerCase();
+        const displayDate = (d.displayDate || d.date || "").toLowerCase();
+        const tagText = (d.tags || []).join(" ").toLowerCase();
+
+        const matchSearch =
+          title.includes(search) ||
+          content.includes(search) ||
+          displayDate.includes(search) ||
+          tagText.includes(search);
+
+        const matchTag = !activeTagFilter || (d.tags || []).includes(activeTagFilter);
+        return matchSearch && matchTag;
+      });
+    }
+
+    function renderList() {
+      const filtered = getFilteredDiaries();
+      diaryContainer.innerHTML = "";
+
+      statusBar.textContent = activeTagFilter
+        ? `目前顯示 ${filtered.length} 篇，標籤篩選：${activeTagFilter}`
+        : `目前顯示 ${filtered.length} 篇`;
+
+      if (filtered.length === 0) {
+        const hint = document.createElement("div");
+        hint.className = "empty-hint";
+        hint.textContent = searchInput.value || activeTagFilter ? "找不到相關的珍珠..." : "還沒有任何紀錄，開始寫下第一篇吧！";
+        diaryContainer.appendChild(hint);
+        return;
+      }
+
+      filtered.forEach((d, index) => {
+        const div = document.createElement("div");
+        div.className = "diary-item" + (index > 0 ? " print-page-break" : "");
+
+        const paper = document.createElement("div");
+        paper.className = "diary-paper";
+
+        const metaEl = document.createElement("div");
+        metaEl.className = "diary-meta";
+        metaEl.textContent = `📅 ${d.displayDate || d.date || "未知日期"}`;
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "diary-main-title";
+        titleEl.textContent = d.displayDate || d.date || "未標日期";
+
+        const subtitleEl = document.createElement("div");
+        subtitleEl.className = "diary-subtitle";
+        subtitleEl.textContent = `今日主旨｜${d.title || "未命名的一天"}`;
+
+        const contentEl = document.createElement("div");
+        contentEl.className = "diary-content";
+        contentEl.textContent = d.content || "";
+
+        const tagsWrap = document.createElement("div");
+        tagsWrap.style.marginTop = "14px";
+        (d.tags || []).forEach(tag => {
+          const tagEl = document.createElement("button");
+          tagEl.className = "tag-pill";
+          tagEl.textContent = `#${tag}`;
+          tagEl.style.border = "none";
+          tagEl.style.cursor = "pointer";
+          tagEl.onclick = () => {
+            activeTagFilter = tag;
+            renderTagFilters();
+            renderList();
+          };
+          tagsWrap.appendChild(tagEl);
+        });
+
+        const actionsEl = document.createElement("div");
+        actionsEl.className = "diary-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "mini-btn";
+        editBtn.textContent = "編輯";
+        editBtn.onclick = () => editDiary(d.id);
+        actionsEl.appendChild(editBtn);
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "mini-btn";
+        copyBtn.textContent = "複製原文";
+        copyBtn.onclick = async () => {
+          await navigator.clipboard.writeText(d.rawText || "");
+          alert("已複製這篇日記原文");
+        };
+        actionsEl.appendChild(copyBtn);
+
+        paper.appendChild(metaEl);
+        paper.appendChild(titleEl);
+        paper.appendChild(subtitleEl);
+        paper.appendChild(contentEl);
+        paper.appendChild(tagsWrap);
+        paper.appendChild(actionsEl);
+        div.appendChild(paper);
+        diaryContainer.appendChild(div);
+      });
+    }
+
+    function printCurrentView() {
+      printModeAll = false;
+      showPage("list");
+      window.print();
+    }
+
+    function printAllDiaries() {
+      printModeAll = true;
+      activeTagFilter = "";
+      searchInput.value = "";
+      renderTagFilters();
+      renderList();
+      showPage("list");
+      window.print();
+      printModeAll = false;
+    }
+
+    function showPage(page) {
+      document.getElementById("page-write").classList.toggle("hidden", page !== "write");
+      document.getElementById("page-list").classList.toggle("hidden", page !== "list");
+      document.getElementById("nav-write").classList.toggle("active", page === "write");
+      document.getElementById("nav-list").classList.toggle("active", page === "list");
+    }
+  </script>
 </body>
 </html>
