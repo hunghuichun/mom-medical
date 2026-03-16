@@ -441,14 +441,19 @@
 
       .diary-item {
         padding: 0;
-        margin: 0 0 10mm 0;
+        margin: 0 0 8mm 0;
         break-inside: auto;
         page-break-inside: auto;
       }
 
       .diary-item.print-page-break {
-        break-before: auto;
-        page-break-before: auto;
+        break-before: page;
+        page-break-before: always;
+      }
+
+      .diary-header-block {
+        break-inside: avoid;
+        page-break-inside: avoid;
       }
 
       .diary-item::before {
@@ -943,6 +948,9 @@
         const paper = document.createElement("div");
         paper.className = "diary-paper";
 
+        const headerBlock = document.createElement("div");
+        headerBlock.className = "diary-header-block";
+
         const metaEl = document.createElement("div");
         metaEl.className = "diary-meta";
         metaEl.textContent = `📅 ${d.displayDate || d.date || "未知日期"}`;
@@ -954,6 +962,10 @@
         const subtitleEl = document.createElement("div");
         subtitleEl.className = "diary-subtitle";
         subtitleEl.textContent = `今日主旨｜${d.title || "未命名的一天"}`;
+
+        headerBlock.appendChild(metaEl);
+        headerBlock.appendChild(titleEl);
+        headerBlock.appendChild(subtitleEl);
 
         const contentEl = document.createElement("div");
         contentEl.className = "diary-content";
@@ -999,9 +1011,7 @@
         };
         actionsEl.appendChild(copyBtn);
 
-        paper.appendChild(metaEl);
-        paper.appendChild(titleEl);
-        paper.appendChild(subtitleEl);
+        paper.appendChild(headerBlock);
         paper.appendChild(contentEl);
         paper.appendChild(tagsWrap);
         paper.appendChild(actionsEl);
