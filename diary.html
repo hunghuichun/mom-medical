@@ -391,7 +391,7 @@
     @media print {
       @page {
         size: A4;
-        margin: 2.2cm 2cm;
+        margin: 1.5cm 1.5cm;
       }
 
       body {
@@ -411,6 +411,7 @@
       .btn-row,
       .editing-banner,
       .print-note,
+      .print-toolbar,
       #page-write,
       .stats-grid {
         display: none !important;
@@ -440,14 +441,14 @@
 
       .diary-item {
         padding: 0;
-        margin: 0 0 20mm 0;
-        break-inside: avoid;
-        page-break-inside: avoid;
+        margin: 0 0 10mm 0;
+        break-inside: auto;
+        page-break-inside: auto;
       }
 
       .diary-item.print-page-break {
-        break-before: page;
-        page-break-before: always;
+        break-before: auto;
+        page-break-before: auto;
       }
 
       .diary-item::before {
@@ -465,27 +466,37 @@
       }
 
       .diary-main-title {
-        font-size: 19pt;
+        font-size: 16pt;
         color: #2f3c17;
         margin-top: 0;
       }
 
       .diary-subtitle {
-        font-size: 12.5pt;
+        font-size: 11pt;
         color: #52643a;
         border-bottom: 1px solid #ddd;
-        margin-bottom: 18pt;
+        margin-bottom: 10pt;
+        padding-bottom: 8pt;
       }
 
       .diary-content {
-        font-size: 11.5pt;
-        line-height: 2;
+        font-size: 10.8pt;
+        line-height: 1.55;
       }
 
       .tag-pill {
         background: none;
         color: #666;
         border: 1px solid #ddd;
+        padding: 2px 8px;
+        margin-right: 6px;
+        margin-top: 4px;
+      }
+
+      .diary-content p,
+      .diary-content div,
+      .diary-content li {
+        margin: 0 0 4pt 0;
       }
     }
 
