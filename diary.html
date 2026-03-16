@@ -411,12 +411,19 @@
       .btn-row,
       .editing-banner,
       .print-note,
-      #page-write {
+      #page-write,
+      .stats-grid {
         display: none !important;
       }
 
       #page-list {
         display: block !important;
+      }
+
+      #print-cover {
+        display: block !important;
+        break-after: page;
+        page-break-after: always;
       }
 
       .card,
@@ -574,6 +581,11 @@
           <button class="btn-sub" onclick="printAllDiaries()">列印全部日記</button>
         </div>
         <div class="print-note">列印時會自動切成較像書頁的版面，輸入區和按鈕不會印出來。</div>
+        <div id="print-cover" class="hidden" style="text-align:center; padding: 80px 20px 40px;">
+          <div style="font-size: 30pt; color: #2f3c17; font-weight: 700; margin-bottom: 12px;">緩緩慧純</div>
+          <div style="font-size: 18pt; color: #52643a; margin-bottom: 14px;">人生整理雲端日記</div>
+          <div id="print-cover-subtitle" style="font-size: 13pt; color: #666;">列印日期集</div>
+        </div>
 
         <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
         <div class="filter-tags" id="filter-tags"></div>
@@ -607,6 +619,8 @@
     const saveBtn = document.getElementById("save-btn");
     const cancelEditBtn = document.getElementById("cancel-edit-btn");
     const filterTagsWrap = document.getElementById("filter-tags");
+    const printCover = document.getElementById("print-cover");
+    const printCoverSubtitle = document.getElementById("print-cover-subtitle");
 
     let allDiaries = [];
     let currentEditId = null;
@@ -959,6 +973,12 @@
         editBtn.onclick = () => editDiary(d.id);
         actionsEl.appendChild(editBtn);
 
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "mini-btn";
+        deleteBtn.textContent = "刪除";
+        deleteBtn.onclick = () => deleteDiary(d.id, d.displayDate || d.date || "這篇日記");
+        actionsEl.appendChild(deleteBtn);
+
         const copyBtn = document.createElement("button");
         copyBtn.className = "mini-btn";
         copyBtn.textContent = "複製原文";
@@ -979,8 +999,48 @@
       });
     }
 
+    function deleteDiary(id, labelText) {
+      const ok = confirm(`確定要刪除「${labelText}」嗎？
+這個動作無法復原。`);
+      if (!ok) return;
+
+      db.child(id).remove()
+        .then(() => {
+          if (currentEditId === id) cancelEdit();
+          alert("這篇日記已刪除");
+        })
+        .catch((error) => {
+          alert("刪除失敗：" + error.message);
+        });
+    }
+
+    function setPrintCoverText(mode) {
+      if (!printCoverSubtitle) return;
+      const filtered = getFilteredDiaries();
+      if (mode === "all") {
+        if (allDiaries.length === 0) {
+          printCoverSubtitle.textContent = "全部日記";
+          return;
+        }
+        const dates = allDiaries.map(d => d.date).filter(Boolean).sort();
+        const first = dates[0] || "";
+        const last = dates[dates.length - 1] || "";
+        printCoverSubtitle.textContent = first && last ? `${first} ～ ${last}` : "全部日記";
+        return;
+      }
+
+      if (activeTagFilter) {
+        printCoverSubtitle.textContent = `篩選列印｜${activeTagFilter}｜共 ${filtered.length} 篇`;
+      } else if ((searchInput.value || "").trim()) {
+        printCoverSubtitle.textContent = `搜尋列印｜${searchInput.value.trim()}｜共 ${filtered.length} 篇`;
+      } else {
+        printCoverSubtitle.textContent = `目前頁面｜共 ${filtered.length} 篇`;
+      }
+    }
+
     function printCurrentView() {
       printModeAll = false;
+      setPrintCoverText("current");
       showPage("list");
       window.print();
     }
@@ -991,6 +1051,7 @@
       searchInput.value = "";
       renderTagFilters();
       renderList();
+      setPrintCoverText("all");
       showPage("list");
       window.print();
       printModeAll = false;
