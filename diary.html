@@ -388,32 +388,24 @@
       margin-top: 6px;
     }
 
-    @media print {
+@media print {
       @page {
         size: A4;
-        margin: 1.5cm 1.5cm;
+        margin: 1.2cm 1.5cm; /* 縮小紙張上下邊界，多塞一點內容 */
       }
 
       body {
         background: white;
         padding: 0;
         color: #222;
-        font-size: 12pt;
-        line-height: 1.9;
+        font-size: 11pt; /* 字體稍微縮小，看起來更像精緻的實體書 */
+        line-height: 1.6; /* 縮小行距，解決浪費版面的問題 */
       }
 
-      header,
-      nav,
-      .tool-row,
-      .filter-tags,
-      .status-bar,
-      .diary-actions,
-      .btn-row,
-      .editing-banner,
-      .print-note,
-      .print-toolbar,
-      #page-write,
-      .stats-grid {
+      /* 隱藏不需要列印的網頁按鈕與搜尋列 */
+      header, nav, .tool-row, .filter-tags, .status-bar,
+      .diary-actions, .btn-row, .editing-banner, .print-note,
+      .print-toolbar, #page-write, .stats-grid {
         display: none !important;
       }
 
@@ -421,82 +413,88 @@
         display: block !important;
       }
 
+      /* 封面排版：讓封面完美置中並獨立一頁 */
       #print-cover {
-        display: block !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh; /* 撐滿第一頁 */
         break-after: page;
         page-break-after: always;
       }
 
-      .card,
-      .diary-item {
+      /* 重置區塊的陰影與邊框 */
+      .card, .diary-item {
         box-shadow: none;
         border: none;
         background: white;
         border-radius: 0;
-      }
-
-      .card {
         padding: 0;
       }
 
+      /* ✨ 核心修正：每一篇日記「強制」從新的一頁開始 */
       .diary-item {
-        padding: 0;
-        margin: 0 0 8mm 0;
-        break-inside: auto;
-        page-break-inside: auto;
-      }
-
-      .diary-item.print-page-break {
+        margin: 0;
         break-before: page;
         page-break-before: always;
+        break-inside: auto; /* 如果某天日記特別長，允許它自然跨頁 */
       }
 
-      .diary-header-block {
-        break-inside: avoid;
-        page-break-inside: avoid;
+      /* 第一篇日記不需要再換頁（不然封面後會多一張白紙） */
+      #diary-container .diary-item:first-child {
+        break-before: auto;
+        page-break-before: auto;
       }
 
+      /* 隱藏網頁版左側的綠色裝飾線條 */
       .diary-item::before {
         display: none;
       }
 
       .diary-paper {
         max-width: none;
-        padding-left: 0;
+        padding: 0;
       }
 
+      /* 微調日期與標題的間距，更有書本感 */
       .diary-meta {
-        font-size: 10.5pt;
+        font-size: 10pt;
         color: #666;
+        margin-bottom: 4px;
       }
 
       .diary-main-title {
         font-size: 16pt;
         color: #2f3c17;
-        margin-top: 0;
+        margin: 0 0 6px 0;
       }
 
       .diary-subtitle {
-        font-size: 11pt;
+        font-size: 12pt;
         color: #52643a;
         border-bottom: 1px solid #ddd;
-        margin-bottom: 10pt;
-        padding-bottom: 8pt;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
       }
 
       .diary-content {
-        font-size: 10.8pt;
-        line-height: 1.55;
+        font-size: 11pt;
+        line-height: 1.6;
+        white-space: pre-wrap;
       }
 
+      /* 標籤樣式微調 */
       .tag-pill {
         background: none;
         color: #666;
-        border: 1px solid #ddd;
+        border: 1px solid #ccc;
         padding: 2px 8px;
         margin-right: 6px;
-        margin-top: 4px;
+        margin-top: 12px;
+        font-size: 9pt;
       }
+    }
 
       .diary-content p,
       .diary-content div,
