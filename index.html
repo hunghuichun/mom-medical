@@ -98,7 +98,7 @@
 
     const candidates = ["未認領", "洪慧真", "洪國龍", "洪慧純", "洪芳茹", "洪國峰"];
     
-    // 行程資料：已將驗血日期改為 3/27 (五)
+    // 行程資料：已加入 3/24 牙醫行程
     const events = [
         { id: 'ev1', date: '2026-02-20', weekday: '五', time: '早上', title: '抽血＋驗尿', location: '醫院檢驗科', notesHint: '空腹 8–12 小時' },
         { id: 'ev2', date: '2026-02-21', weekday: '六', time: '上午', title: '神經科回診', location: '詹弘廷醫師', notesHint: '' },
@@ -112,6 +112,7 @@
         { id: 'ev13', date: '2026-03-07', weekday: '六', time: '上午', title: '神經科回診 (詹弘廷)', location: '醫療中心大樓A棟1樓(A131診/33號)', notesHint: '報到前先至血壓站量血壓及體重' },
         { id: 'ev7', date: '2026-03-10', weekday: '二', time: '上午', title: '牙齒檢查/治療', location: '牙科診所', notesHint: '' },
         { id: 'ev6', date: '2026-03-23', weekday: '一', time: '15:00', title: '智能檢查', location: '檢查室', notesHint: '' },
+        { id: 'ev16', date: '2026-03-24', weekday: '二', time: '14:30', title: '看牙齒', location: '牙科診所', notesHint: '例行牙齒檢查/治療' },
         { id: 'ev10', date: '2026-03-27', weekday: '五', time: '早上', title: '中國醫驗血', location: '中國醫藥大學附設醫院', notesHint: '空腹 8-12 小時' },
         { id: 'ev15', date: '2026-03-28', weekday: '六', time: '上午', title: '神經科回診 (詹弘廷醫師/18號)', location: '醫療中心 A棟1樓 (A131診)', notesHint: '報到前先量血壓、體重；憑單插卡報到' },
         { id: 'ev8', date: '2026-03-31', weekday: '二', time: '上午', title: '新陳代謝科回診', location: '醫院', notesHint: '' }
@@ -138,7 +139,7 @@
         list.innerHTML = '';
         const todayStr = getTodayStr();
 
-        // 排序：日期由晚到早
+        // 排序：日期由晚到早 (Descending)
         const sortedEvents = [...events].sort((a, b) => b.date.localeCompare(a.date));
 
         sortedEvents.forEach((ev, index) => {
