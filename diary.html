@@ -7,6 +7,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
   <style>
     :root {
@@ -388,21 +389,20 @@
       margin-top: 6px;
     }
 
-@media print {
+    @media print {
       @page {
         size: A4;
-        margin: 1.2cm 1.5cm; /* 縮小紙張上下邊界，多塞一點內容 */
+        margin: 1.2cm 1.5cm;
       }
 
       body {
         background: white;
         padding: 0;
         color: #222;
-        font-size: 11pt; /* 字體稍微縮小，看起來更像精緻的實體書 */
-        line-height: 1.6; /* 縮小行距，解決浪費版面的問題 */
+        font-size: 11pt;
+        line-height: 1.6;
       }
 
-      /* 隱藏不需要列印的網頁按鈕與搜尋列 */
       header, nav, .tool-row, .filter-tags, .status-bar,
       .diary-actions, .btn-row, .editing-banner, .print-note,
       .print-toolbar, #page-write, .stats-grid {
@@ -413,18 +413,16 @@
         display: block !important;
       }
 
-      /* 封面排版：讓封面完美置中並獨立一頁 */
       #print-cover {
         display: flex !important;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 100vh; /* 撐滿第一頁 */
+        height: 100vh;
         break-after: page;
         page-break-after: always;
       }
 
-      /* 重置區塊的陰影與邊框 */
       .card, .diary-item {
         box-shadow: none;
         border: none;
@@ -433,21 +431,18 @@
         padding: 0;
       }
 
-      /* ✨ 核心修正：每一篇日記「強制」從新的一頁開始 */
       .diary-item {
         margin: 0;
         break-before: page;
         page-break-before: always;
-        break-inside: auto; /* 如果某天日記特別長，允許它自然跨頁 */
+        break-inside: auto;
       }
 
-      /* 第一篇日記不需要再換頁（不然封面後會多一張白紙） */
       #diary-container .diary-item:first-child {
         break-before: auto;
         page-break-before: auto;
       }
 
-      /* 隱藏網頁版左側的綠色裝飾線條 */
       .diary-item::before {
         display: none;
       }
@@ -457,7 +452,6 @@
         padding: 0;
       }
 
-      /* 微調日期與標題的間距，更有書本感 */
       .diary-meta {
         font-size: 10pt;
         color: #666;
@@ -484,7 +478,6 @@
         white-space: pre-wrap;
       }
 
-      /* 標籤樣式微調 */
       .tag-pill {
         background: none;
         color: #666;
@@ -494,7 +487,6 @@
         margin-top: 12px;
         font-size: 9pt;
       }
-    }
 
       .diary-content p,
       .diary-content div,
@@ -517,27 +509,42 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>緩緩慧純</h1>
-      <div class="subtitle">人生整理師・雲端日記寶盒</div>
-    </header>
 
-    <nav>
-      <button onclick="showPage('write')" id="nav-write" class="active">✍️ 貼上日記</button>
-      <button onclick="showPage('list')" id="nav-list">📚 回顧與列印</button>
-      <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
-    </nav>
+  <div id="login-section" class="container card" style="text-align: center; max-width: 400px; margin-top: 100px; display: none;">
+    <h2 style="color: var(--primary-green);">🚪 緩緩慧純・專屬空間</h2>
+    <div style="margin-bottom: 20px; color: var(--muted-text);">請輸入專屬鑰匙解鎖日記</div>
+    <div class="form-group">
+      <input type="email" id="login-email" placeholder="信箱帳號" style="margin-bottom: 10px;">
+      <input type="password" id="login-password" placeholder="密碼" style="margin-bottom: 20px;">
+      <button class="btn-main" onclick="login()" style="width: 100%;">開啟日記本</button>
+    </div>
+  </div>
 
-    <div id="page-write" class="card">
-      <div id="editing-banner" class="editing-banner hidden">
-        妳正在編輯一篇已存在的日記，修改後按「更新這篇日記」
-      </div>
+  <div id="main-app" style="display: none;">
+    <div class="container">
+      <header>
+        <h1>緩緩慧純</h1>
+        <div class="subtitle">
+          人生整理師・雲端日記寶盒 
+          <a href="#" onclick="logout()" style="color:#888; font-size:14px; margin-left:10px; text-decoration: underline;">[鎖上日記登出]</a>
+        </div>
+      </header>
 
-      <div class="form-group">
-        <label for="raw-diary">整篇日記貼上區</label>
-        <div class="helper-text">只要整篇貼上就好，系統會自動拆成日期、主旨、內容和標籤。最穩的格式是保留這四段：日期、今日主旨、日記內容、今日標籤。</div>
-        <textarea id="raw-diary" placeholder="例如：
+      <nav>
+        <button onclick="showPage('write')" id="nav-write" class="active">✍️ 貼上日記</button>
+        <button onclick="showPage('list')" id="nav-list">📚 回顧與列印</button>
+        <a href="medical.html" class="medical-back">🏥 回到醫療分工</a>
+      </nav>
+
+      <div id="page-write" class="card">
+        <div id="editing-banner" class="editing-banner hidden">
+          妳正在編輯一篇已存在的日記，修改後按「更新這篇日記」
+        </div>
+
+        <div class="form-group">
+          <label for="raw-diary">整篇日記貼上區</label>
+          <div class="helper-text">只要整篇貼上就好，系統會自動拆成日期、主旨、內容和標籤。最穩的格式是保留這四段：日期、今日主旨、日記內容、今日標籤。</div>
+          <textarea id="raw-diary" placeholder="例如：
 2026年3月15日 星期日
 
 今日主旨：平穩整理的一天
@@ -546,7 +553,7 @@
 今天早上六點多起床……
 
 今日標籤：#日常 #運動 #理財"></textarea>
-        <div class="template-box">建議格式
+          <div class="template-box">建議格式
 2026年3月15日 星期日
 
 今日主旨：平穩整理的一天
@@ -556,54 +563,55 @@
 ……
 
 今日標籤：#日常 #運動 #健康</div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-main" id="save-btn" onclick="saveOrUpdateDiary()">自動解析並同步到雲端</button>
+          <button class="btn-sub hidden" id="cancel-edit-btn" onclick="cancelEdit()">取消編輯</button>
+        </div>
       </div>
 
-      <div class="btn-row">
-        <button class="btn-main" id="save-btn" onclick="saveOrUpdateDiary()">自動解析並同步到雲端</button>
-        <button class="btn-sub hidden" id="cancel-edit-btn" onclick="cancelEdit()">取消編輯</button>
-      </div>
-    </div>
-
-    <div id="page-list" class="hidden">
-      <div class="card">
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-title">總篇數</div>
-            <div class="stat-value" id="stat-total">0</div>
+      <div id="page-list" class="hidden">
+        <div class="card">
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-title">總篇數</div>
+              <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-title">本月紀錄</div>
+              <div class="stat-value" id="stat-month">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-title">常用標籤</div>
+              <div class="stat-value" id="stat-top-tag">—</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-title">最近紀錄</div>
+              <div class="stat-value" id="stat-latest">—</div>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="stat-title">本月紀錄</div>
-            <div class="stat-value" id="stat-month">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-title">常用標籤</div>
-            <div class="stat-value" id="stat-top-tag">—</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-title">最近紀錄</div>
-            <div class="stat-value" id="stat-latest">—</div>
-          </div>
-        </div>
 
-        <div class="tool-row">
-          <input type="text" id="search-input" placeholder="搜尋標題、主旨、內容、標籤..." oninput="renderList()" />
-          <button class="btn-sub" onclick="clearSearch()">清除搜尋</button>
-        </div>
+          <div class="tool-row">
+            <input type="text" id="search-input" placeholder="搜尋標題、主旨、內容、標籤..." oninput="renderList()" />
+            <button class="btn-sub" onclick="clearSearch()">清除搜尋</button>
+          </div>
 
-        <div class="print-toolbar">
-          <button class="btn-sub" onclick="printCurrentView()">列印目前篩選結果</button>
-          <button class="btn-sub" onclick="printAllDiaries()">列印全部日記</button>
-        </div>
-        <div class="print-note">列印時會自動切成較像書頁的版面，輸入區和按鈕不會印出來。</div>
-        <div id="print-cover" class="hidden" style="text-align:center; padding: 80px 20px 40px;">
-          <div style="font-size: 30pt; color: #2f3c17; font-weight: 700; margin-bottom: 12px;">緩緩慧純</div>
-          <div style="font-size: 18pt; color: #52643a; margin-bottom: 14px;">人生整理雲端日記</div>
-          <div id="print-cover-subtitle" style="font-size: 13pt; color: #666;">列印日期集</div>
-        </div>
+          <div class="print-toolbar">
+            <button class="btn-sub" onclick="printCurrentView()">列印目前篩選結果</button>
+            <button class="btn-sub" onclick="printAllDiaries()">列印全部日記</button>
+          </div>
+          <div class="print-note">列印時會自動切成較像書頁的版面，輸入區和按鈕不會印出來。</div>
+          <div id="print-cover" class="hidden" style="text-align:center; padding: 80px 20px 40px;">
+            <div style="font-size: 30pt; color: #2f3c17; font-weight: 700; margin-bottom: 12px;">緩緩慧純</div>
+            <div style="font-size: 18pt; color: #52643a; margin-bottom: 14px;">人生整理雲端日記</div>
+            <div id="print-cover-subtitle" style="font-size: 13pt; color: #666;">列印日期集</div>
+          </div>
 
-        <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
-        <div class="filter-tags" id="filter-tags"></div>
-        <div id="diary-container" style="margin-top: 20px;"></div>
+          <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
+          <div class="filter-tags" id="filter-tags"></div>
+          <div id="diary-container" style="margin-top: 20px;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -623,7 +631,7 @@
       firebase.initializeApp(firebaseConfig);
     }
 
-    const db = firebase.database().ref("diaries");
+    let db; // 資料庫將在登入後綁定專屬路徑
 
     const rawDiaryEl = document.getElementById("raw-diary");
     const searchInput = document.getElementById("search-input");
@@ -641,28 +649,61 @@
     let activeTagFilter = "";
     let printModeAll = false;
 
-    db.on(
-      "value",
-      (snapshot) => {
-        const data = snapshot.val() || {};
+    // --- 監聽登入狀態 ---
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // 登入成功：隱藏登入框，顯示主程式
+        document.getElementById("login-section").style.display = "none";
+        document.getElementById("main-app").style.display = "block";
 
-        allDiaries = Object.keys(data).map(id => ({ id, ...normalizeDiary(data[id]) }));
-        allDiaries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        // 資料庫路徑綁定為該使用者的專屬 UID
+        db = firebase.database().ref("users/" + user.uid + "/diaries");
 
-        renderStats();
-        renderTagFilters();
-        renderList();
-      },
-      (error) => {
-        diaryContainer.innerHTML = "";
-        const hint = document.createElement("div");
-        hint.className = "empty-hint";
-        hint.textContent = "讀取雲端資料失敗：" + error.message;
-        diaryContainer.appendChild(hint);
-        statusBar.textContent = "讀取失敗";
+        // 開始讀取該使用者的專屬資料
+        db.on("value", (snapshot) => {
+            const data = snapshot.val() || {};
+            allDiaries = Object.keys(data).map(id => ({ id, ...normalizeDiary(data[id]) }));
+            allDiaries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            renderStats();
+            renderTagFilters();
+            renderList();
+          }, (error) => {
+            diaryContainer.innerHTML = "";
+            const hint = document.createElement("div");
+            hint.className = "empty-hint";
+            hint.textContent = "讀取雲端資料失敗：" + error.message;
+            diaryContainer.appendChild(hint);
+            statusBar.textContent = "讀取失敗";
+          }
+        );
+      } else {
+        // 未登入：顯示登入框，隱藏主程式
+        document.getElementById("login-section").style.display = "block";
+        document.getElementById("main-app").style.display = "none";
+        allDiaries = []; // 清空記憶體中的資料
       }
-    );
+    });
 
+    // --- 登入與登出功能 ---
+    function login() {
+      const email = document.getElementById("login-email").value;
+      const pwd = document.getElementById("login-password").value;
+      if (!email || !pwd) {
+        alert("請輸入信箱與密碼！");
+        return;
+      }
+      firebase.auth().signInWithEmailAndPassword(email, pwd)
+        .catch(error => alert("登入失敗，請檢查帳號密碼！\n(" + error.message + ")"));
+    }
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        document.getElementById("login-email").value = "";
+        document.getElementById("login-password").value = "";
+      });
+    }
+
+    // --- 日記處理邏輯 ---
     function normalizeDiary(d) {
       const rawText = d.rawText || buildRawTextFromStructured(d);
       const parsed = parseDiaryText(rawText);
@@ -762,6 +803,10 @@
       const rawText = rawDiaryEl.value.trim();
       if (!rawText) {
         alert("請先貼上整篇日記喔");
+        return;
+      }
+      if (!db) {
+        alert("尚未登入或連線失敗，請重新整理網頁！");
         return;
       }
 
@@ -1019,9 +1064,9 @@
     }
 
     function deleteDiary(id, labelText) {
-      const ok = confirm(`確定要刪除「${labelText}」嗎？
-這個動作無法復原。`);
+      const ok = confirm(`確定要刪除「${labelText}」嗎？\n這個動作無法復原。`);
       if (!ok) return;
+      if (!db) return;
 
       db.child(id).remove()
         .then(() => {
