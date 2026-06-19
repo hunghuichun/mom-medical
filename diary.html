@@ -609,7 +609,8 @@
           </div>
 
           <div class="status-bar" id="status-bar">正在整理妳的珍珠...</div>
-          <div class="filter-tags" id="filter-tags"></div>
+<button class="btn-sub" id="tag-toggle-btn" onclick="toggleTagFilters()">📂 展開標籤篩選</button>
+<div class="filter-tags hidden" id="filter-tags"></div>         
           <div id="diary-container" style="margin-top: 20px;"></div>
         </div>
       </div>
@@ -641,6 +642,7 @@
     const saveBtn = document.getElementById("save-btn");
     const cancelEditBtn = document.getElementById("cancel-edit-btn");
     const filterTagsWrap = document.getElementById("filter-tags");
+    const tagToggleBtn = document.getElementById("tag-toggle-btn");
     const printCover = document.getElementById("print-cover");
     const printCoverSubtitle = document.getElementById("print-cover-subtitle");
 
@@ -648,6 +650,7 @@
     let currentEditId = null;
     let activeTagFilter = "";
     let printModeAll = false;
+    let tagFiltersOpen = false;
 
     // --- 監聽登入狀態 ---
     firebase.auth().onAuthStateChanged((user) => {
@@ -928,8 +931,9 @@
       filterTagsWrap.appendChild(allBtn);
 
       Object.keys(tagCounter)
-        .sort((a, b) => tagCounter[b] - tagCounter[a])
-        .forEach(tag => {
+  .sort((a, b) => tagCounter[b] - tagCounter[a])
+  .slice(0, 10)
+  .forEach(tag => {
           const btn = document.createElement("button");
           btn.className = "tag-filter-btn" + (activeTagFilter === tag ? " active" : "");
           btn.textContent = `${tag} (${tagCounter[tag]})`;
@@ -941,7 +945,21 @@
           filterTagsWrap.appendChild(btn);
         });
     }
+function toggleTagFilters() {
+  tagFiltersOpen = !tagFiltersOpen;
 
+  filterTagsWrap.classList.toggle(
+    "hidden",
+    !tagFiltersOpen
+  );
+
+  if (tagToggleBtn) {
+    tagToggleBtn.textContent =
+      tagFiltersOpen
+        ? "📂 收合標籤篩選"
+        : "📂 展開標籤篩選";
+  }
+}
     function clearSearch() {
       searchInput.value = "";
       activeTagFilter = "";
